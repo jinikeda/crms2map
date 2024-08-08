@@ -3,7 +3,8 @@ from setuptools import setup, find_packages
 setup(
     name="CRMS2Map",
     version="0.1",
-    packages=find_packages(),
+    packages=find_packages(where='src'),
+    package_dir={"": "src"},
     author="Jin Ikeda",
     author_email="jin.ikeda0401@gmail.com",
     description="A package for CRMS2Map data processing and analysis",
