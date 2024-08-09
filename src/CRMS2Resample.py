@@ -3,19 +3,18 @@
 # CRMS2Resample
 # Developed by the Center for Computation & Technology and Center for Coastal Ecosystem Design Studio at Louisiana State University (LSU).
 # Developer: Jin Ikeda, Shu Gao, and Christopher E. Kees
-# Last modified Feb 29, 2024
+# Last modified Aug 8, 2024
 
 ### Step 2 #############################################################################################################
 print ('Step 2: Resample and data-processing')
 ########################################################################################################################
 ### 2.1 Import modules ###
 # Import the general interpolation functions from the CRMS_general_functions.py file (some interpolation functions are keep inside of this code)
-from CRMS_general_functions import *
+from .CRMS_general_functions import *
 
 start_time = time.time()
 
 # The target working directory
-#Workspace = "/Users/jinikeda/ETC/CRMS2Plot/" # Local
 Workspace=os.getcwd() # HPC
 
 # Print the current working directory
@@ -42,7 +41,7 @@ except Exception as e:
 
 ########################################################################################################################
 # Get the CRMS files using the get_CRMS_file function
-Data_list = [1,2,3,4]
+Data_list = [1,2,3,4] # 1: Salinity, 2: Water_Elevation_to_Datum, 3: Water_Elevation_to_Marsh, 4: Water Temperature
 
 for Data in Data_list:
     assert 1 <= Data <= 4,"Please input the values between 1-4 ...{{ (>_<) }}\n"
