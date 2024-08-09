@@ -5,8 +5,8 @@
 # Developer: Jin Ikeda, Shu Gao, and Christopher E. Kees
 # Last modified Aug 8, 2024
 
-from .CRMS_general_functions import *
-def Continuous_Hydrographic():
+from CRMS_general_functions import *
+def subsets():
 
     ### Step 1 #############################################################################################################
     print("Step 1: Auto retrieve the original datasets")
@@ -212,5 +212,5 @@ def Continuous_Hydrographic():
     print("Job Finished ʕ •ᴥ•ʔ")
 
 if __name__ == "__main__":
-    Continuous_Hydrographic()
+    subsets()
 

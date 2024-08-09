@@ -5,9 +5,9 @@
 # Developer: Jin Ikeda, Shu Gao, and Christopher E. Kees
 # Last modified Aug 9, 2024
 
-from .CRMS_general_functions import *
+from CRMS_general_functions import *
 
-def Discrete_Hydrographic():
+def subsets():
     ### Step 1 #############################################################################################################
     print("Step 1: Auto retrieve the original datasets")
     ########################################################################################################################
@@ -159,13 +159,13 @@ def Discrete_Hydrographic():
     monthly_pore_30_mean.to_csv(os.path.join(Inputspace,save_name))
 
     # resample the DataFrame to yearly frequency and calculate the mean value
-    yearly_pore_10_mean = monthly_pore_10_mean.resample('AS').mean().where(monthly_pore_10_mean.resample('AS').count() >= 3)               # Use only include more than 9 months average data
+    yearly_pore_10_mean = monthly_pore_10_mean.resample('YS').mean().where(monthly_pore_10_mean.resample('YS').count() >= 3)               # Use only include more than 9 months average data
     yearly_pore_10_mean ['num_station']=yearly_pore_10_mean.count(axis=1)                                                                  # Provide the number of available stations
     save_name=output_name1+'_Ydata.csv'
     yearly_pore_10_mean.to_csv(os.path.join(Inputspace,save_name))
     # yearly_pore_10_mean.to_csv(save_name, na_rep=int(-99999))
 
-    yearly_pore_30_mean = monthly_pore_30_mean.resample('AS').mean().where(monthly_pore_30_mean.resample('AS').count() >= 3)               # Use only include more than 9 months average data
+    yearly_pore_30_mean = monthly_pore_30_mean.resample('YS').mean().where(monthly_pore_30_mean.resample('YS').count() >= 3)               # Use only include more than 9 months average data
     yearly_pore_30_mean ['num_station']=yearly_pore_30_mean.count(axis=1)                                                                  # Provide the number of available stations
     save_name=output_name2+'_Ydata.csv'
     yearly_pore_30_mean.to_csv(os.path.join(Inputspace,save_name))
@@ -191,6 +191,6 @@ def Discrete_Hydrographic():
     print("Job Finished ʕ •ᴥ•ʔ")
 
 if __name__ == "__main__":
-    Discrete_Hydrographic()
+    subsets()
 
 
