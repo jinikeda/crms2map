@@ -32,18 +32,28 @@ jobs:
           # Initialize Conda for the current shell session
           eval "$(conda shell.bash hook)"
           # Activate the Conda environment
-          echo "conda activate CRMS_env" >> $GITHUB_ENV
           conda activate CRMS_env
         fi
+    - name: List installed packages
+      run: |
+        eval "$(conda shell.bash hook)"
+        conda activate CRMS_env
+        conda list
     - name: Install dependencies
       run: |
+        eval "$(conda shell.bash hook)"
+        conda activate CRMS_env
         pip install flake8 pytest
     - name: Lint with flake8
       run: |
+        eval "$(conda shell.bash hook)"
+        conda activate CRMS_env
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
+        eval "$(conda shell.bash hook)"
+        conda activate CRMS_env
         pytest
