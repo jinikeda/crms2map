@@ -105,6 +105,7 @@ from src.CRMS2Resample import *
 #     # Check if the datetime conversion is correct
 #     assert sample_data.index[0] == pd.Timestamp('2020-01-01 00:00:00'), "Datetime conversion failed"
 
+
 ########################################################################################################################
 ### Resampling test
 ########################################################################################################################
@@ -113,56 +114,82 @@ def sample_data_hourly():
     """Fixture that returns a sample pandas DataFrame for testing."""
     total_hours = 768
     data = {
-        'timestamp': pd.date_range(start='2020-01-01', periods=total_hours, freq='h'),
-        'value': range(total_hours)
+        "timestamp": pd.date_range(start="2020-01-01", periods=total_hours, freq="h"),
+        "value": range(total_hours),
     }
     df = pd.DataFrame(data)
-    df.set_index('timestamp', inplace=True)
+    df.set_index("timestamp", inplace=True)
     return df, total_hours  # Set 'timestamp' as the index
+
 
 def test_delta_time(sample_data_hourly):
     """Test the delta_hours"""
     df, total_hours = sample_data_hourly
-    delta = df.index.to_series().diff().dt.total_seconds().div(3600).fillna(0).astype(int)[1:]  # Skip the first value
+    delta = (
+        df.index.to_series()
+        .diff()
+        .dt.total_seconds()
+        .div(3600)
+        .fillna(0)
+        .astype(int)[1:]
+    )  # Skip the first value
     unique_delta = np.unique(delta)
     assert len(unique_delta) == 1, "Delta between timestamps should be constant."
     assert unique_delta[0] == 1, "Delta between timestamps should be 1 hour."
+
+
 def test_resample_data_hourly_to_daily(sample_data_hourly):
     """Test resampling data from hourly to daily."""
     df, total_hours = sample_data_hourly
-    resampled_df = df.resample('D').mean()  # Resample the DataFrame to daily frequency
+    resampled_df = df.resample("D").mean()  # Resample the DataFrame to daily frequency
 
     # Check if the resampled DataFrame has the correct number of days and sum of values
     days = np.ceil(total_hours / 24).astype(int)
-    assert resampled_df.shape[0] == days, "Resampling to daily should result in the correct number of days."
+    assert (
+        resampled_df.shape[0] == days
+    ), "Resampling to daily should result in the correct number of days."
+
 
 def test_resample_data_empty_dataframe(sample_data_hourly):
     """Test resampling an empty DataFrame."""
     empty_df, total_hours = sample_data_hourly
-    empty_df['value'] = np.nan  # Replace all values with NaN
+    empty_df["value"] = np.nan  # Replace all values with NaN
 
-    resampled_df = empty_df.resample('D').mean()  # Resample the DataFrame to daily frequency
+    resampled_df = empty_df.resample(
+        "D"
+    ).mean()  # Resample the DataFrame to daily frequency
 
     # Check if resampling returns a DataFrame where all values are NaN
-    assert resampled_df['value'].isna().all(), "Resampling a DataFrame with all NaNs should result in a DataFrame with all NaNs."
+    assert (
+        resampled_df["value"].isna().all()
+    ), "Resampling a DataFrame with all NaNs should result in a DataFrame with all NaNs."
 
     # Optionally, also check if the shape is correct (i.e., the number of days should match)
     days = np.ceil(total_hours / 24).astype(int)
-    assert resampled_df.shape[0] == days, f"Expected {days} days, but got {len(resampled_df)} days"
+    assert (
+        resampled_df.shape[0] == days
+    ), f"Expected {days} days, but got {len(resampled_df)} days"
+
 
 def test_resample_data_hourly_to_monthly(sample_data_hourly):
     """Test resampling data from hourly to monthly."""
     df, total_hours = sample_data_hourly
     # Calculate daily mean values
-    daily_mean = df.resample('D').mean()
+    daily_mean = df.resample("D").mean()
 
     # Calculate Monthly mean values
-    monthly_mean = daily_mean.resample('MS').mean().where(daily_mean.resample('MS').count() >= 5)
+    monthly_mean = (
+        daily_mean.resample("MS").mean().where(daily_mean.resample("MS").count() >= 5)
+    )
 
     # Check if the resampled DataFrame has the correct number of months
     months = np.ceil(total_hours / (24 * 30)).astype(int)
-    assert monthly_mean.shape[0] == months, "Resampling to monthly should result in the correct number of months."
-    assert monthly_mean.index[-1] == pd.Timestamp('2020-02-01'), "Last month should be Feb 2020 when time is set 768 hours."
-    assert pd.isna(monthly_mean.iloc[-1]['value']), "Last month should be NaN when count is less than 5."
-
-
+    assert (
+        monthly_mean.shape[0] == months
+    ), "Resampling to monthly should result in the correct number of months."
+    assert monthly_mean.index[-1] == pd.Timestamp(
+        "2020-02-01"
+    ), "Last month should be Feb 2020 when time is set 768 hours."
+    assert pd.isna(
+        monthly_mean.iloc[-1]["value"]
+    ), "Last month should be NaN when count is less than 5."
