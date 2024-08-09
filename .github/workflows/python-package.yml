@@ -31,6 +31,8 @@ jobs:
           conda env create -f env.yml
           # Initialize Conda for the current shell session
           eval "$(conda shell.bash hook)"
+          # Activate the Conda environment
+          echo "conda activate CRMS_env" >> $GITHUB_ENV
           conda activate CRMS_env
         fi
     - name: Install dependencies
