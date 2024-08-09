@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
-# CRMS_Discrete_Hydrographic2Plot (plot porewater salinity)
+# CRMS_Discrete_Hydrographic for porewater salinity
 # Developed by the Center for Computation & Technology and Center for Coastal Design Studio at Louisiana State University (LSU).
 # Developer: Jin Ikeda, Shu Gao, and Christopher E. Kees
 # Last modified Aug 9, 2024
