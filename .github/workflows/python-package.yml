@@ -27,6 +27,7 @@ jobs:
     - name: Conditionally create Conda environment
       run: |
         if [ -f env.yml ]; then
+          conda init
           sed -i "s/python=3.9/python=${{ matrix.python-version }}/" env.yml
           conda env create -f env.yml
           conda activate CRMS_env
