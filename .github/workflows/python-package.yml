@@ -33,6 +33,9 @@ jobs:
           eval "$(conda shell.bash hook)"
           conda activate CRMS_env
         fi
+    - name: Install dependencies
+      run: |
+        pip install flake8
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
