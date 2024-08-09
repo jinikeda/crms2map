@@ -11,17 +11,17 @@ url = "https://github.com/jinikeda/CRMS2Map"
 author = "Jin Ikeda"
 license_type = "MIT License"
 install_requires = []
-# install_requires = [
-#         'gdal',
-#         'numpy',
-#         'pandas',
-#         'geopandas',
-#         'rasterio',
-#         'scipy',
-#         'matplotlib',
-#         'basemap',
-#         'rioxarray'
-#     ]
+install_requires = [
+        'gdal',
+        'numpy',
+        'pandas',
+        'geopandas',
+        'rasterio',
+        'scipy',
+        'matplotlib',
+        'basemap',
+        'rioxarray'
+    ]
 
 # ## Determine the platform and make platform-specific adjustments
 # if platform.system() in ['Darwin', 'Linux', 'Ubuntu']:
