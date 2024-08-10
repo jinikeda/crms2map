@@ -12,6 +12,7 @@ import geopandas as gpd
 import os
 import glob
 from datetime import datetime, timedelta
+import argparse
 # stats
 from statsmodels.tsa.stattools import adfuller
 from scipy import stats
@@ -23,18 +24,53 @@ import seaborn as sns
 from matplotlib.ticker import (AutoMinorLocator, MultipleLocator)
 import itertools
 
-global file_suffix, file_suffix2, start_date, end_date
-start_date = '2008-01-01' # 'yyyy-mm-dd'
-end_date = '2024-02-29'   # 'yyyy-mm-dd'
+global file_suffix, file_suffix2
 
 file_suffix=".csv"
 file_suffix2 = ".xlsx"
+
+# Declare global variables
+start_date = None
+end_date = None
+
+
+
+# Make Output folder
+Workspace = "C:/Users/jikeda/Desktop/CRMS2Map/CRMS_devtest"
+Inputspace = os.path.join(Workspace, "Input")  # Make Input folder
+
+########################################################################################################################
+# Set the list of CRMS stations to plot
+
+### Manual input ###
+station_list = ["CRMS0002","CRMS0003"]
+
+### Use txt file ###
+### user turn on the following code to use the txt file
+# Inputspace = os.path.join(Workspace, "Input")  # Input folder
+# df = pd.read_csv(os.path.join(Inputspace,'CRMS_Water_Temp_2006_2024_Mdata.csv'), encoding='utf-8')
+# station_list= df.columns[1:-1].tolist() # exclude 'Date' and 'num_station' columns
+# np.savetxt(os.path.join(Inputspace,'station_list.txt'), station_list, fmt='%s')
+
+# Print the current working directory
+print("Current working directory: {0}".format(os.getcwd()))
+
+# Change the current working directory
+os.chdir(Workspace)
+
+Photospace = os.path.join(Workspace, 'Photo')
+# Output_space=os.path.join(Workspace,'bootstrap_Output')
+
+try:
+    os.mkdir(Photospace)
+except:
+    pass
 
 
 ### Functions ####################################################################################################
 # Make a nested datasets for continuous data
 def create_nested_datasets(file_name, file_name_o, file_suffix,MA_window, threshold1,Discrete = False):
-
+    global start_date, end_date  # Refer to the global variables
     datasets = {}  # monthly average dataset
     MA_datasets = {}  # moving average dictionaly
     for file_n, name_o in zip(file_name, file_name_o):
@@ -117,315 +153,232 @@ def sub_dataframe_gen(sub_name,file_name):
     return sub_datasets
 
 
-def get_sorted_files(base_path, file_name_pattern, sort_pattern):
-    file_sub_name = []
-    for sub_file in glob.glob(os.path.join(base_path, file_name_pattern)):
-        if "_mean" not in sub_file and "_median" not in sub_file:
-            file_sub_name.append(sub_file)
-    return sorted(file_sub_name, key=lambda x: sort_basin.index(os.path.splitext(os.path.basename(x))[0].split(sort_pattern)[1]))
 
+#Plot CRMS data
+def plot_CRMS(MA_datasets, MA_datasets_discrete, file_name_o, plot_period, plot_space, plot_range=None,
+              station=None):
+    """
+    General function to plot water level, hydroperiod, inundation depth, salinity, and other environmental data.
 
-# For all duration and intervals dataset
-def process_files(file_names, sort_basin, label):
-    datasets = {label: {}}  # Initialize the nested dictionary with the label key
-    for file_name in file_names:
-        efg = []  # dummy list for appending
-        df = pd.read_csv(file_name)  # read the HP file
-        df2 = pd.read_csv(file_name.replace('HP', 'depth'))  # read the depth file
-        df3 = df.merge(df2, on=df2.Date, how='left', suffixes=('_HP', '_depth'))
-        df3 = df3.rename(columns={"key_0": "Date"})
-        df3.index = pd.to_datetime(df3.Date)
-        df3.drop(['Date', 'Date_HP', 'Date_depth'], axis=1, inplace=True)
-        df3 = df3.reindex(columns=sorted(df3.columns))
-        for k in np.arange(start=0, stop=df3.shape[1] + 1, step=2):
-            efg.append(df3.iloc[:, k:k + 2].mean(axis=0, skipna=True).values.tolist())
-        abc = pd.DataFrame(efg, columns=["HP_total", "Depth_total"])
+    Parameters:
+    - datasets: dict of datasets
+    - MA_datasets: dict containing main datasets (water level, salinity, etc.)
+    - MA_datasets_discrete: dict containing discrete datasets (for pore water, etc.)
+    - file_name_o: str, the type of plot ("WL", "Salinity", "W_HP", etc.)
+    - plot_period: list or tuple, the period over which to plot the data
+    - plot_range: list or tuple, the y-axis range for the plot
+    - plot_space: float, the spacing of y-axis ticks. If the value is less than plot_range/4, automatically modify the value
+    - station: str or list, optional, the CRMS station(s) to plot data for. If None, plots the median across all stations.
+    """
 
-        interval_dataframes = []
-        column_names = []
-        for year in range(start_year, end_year + 1, interval):
-            mask = (df3.index.year >= year) & (df3.index.year < year + interval)
-            interval_dataframes.append(df3[mask])
-            column_names.extend([f"HP_{year}", f"Depth_{year}"])
+    ####################################################################################################################
+    # Automatically define the plot_range based on data (if the range does not provided by the user)
+    ####################################################################################################################
+    if plot_range is None:
+        if station:
+            if isinstance(station, list):
+                min_value = round(MA_datasets[file_name_o][station].min().min() - 0.05,1)
+                max_value = round(MA_datasets[file_name_o][station].max().max() + 0.05,1)
+            else:
+                min_value = round(MA_datasets[file_name_o][station].min() - 0.05,1)
+                max_value = round(MA_datasets[file_name_o][station].max() + 0.05,1)
+        else:
+            # Calculate the 10th percentile at each time step
+            quantiles_low = MA_datasets[file_name_o].quantile(q=0.25, axis=1)
+            quantiles_high = MA_datasets[file_name_o].quantile(q=0.75, axis=1)
 
-        interval_efg = []
-        for i, interval_df in enumerate(interval_dataframes):
-            for k in np.arange(start=0, stop=interval_df.shape[1] + 1, step=2):
-                interval_efg.extend(interval_df.iloc[:, k:k + 1].mean(axis=0, skipna=True).values.tolist())
-            for k in np.arange(start=1, stop=interval_df.shape[1] + 1, step=2):
-                interval_efg.extend(interval_df.iloc[:, k:k + 1].mean(axis=0, skipna=True).values.tolist())
+            # Take the minimum and maximum of these quantiles across all time steps
+            min_value = round(quantiles_low.min() - 0.05,1)
+            max_value = round(quantiles_high.max() + 0.05,1)
 
-        interval_efg = np.asarray(interval_efg)
-        interval_efg = interval_efg.reshape(-1, (i+1)*2, order='F')
-        interval_abc = pd.DataFrame(interval_efg, columns=column_names)
-        all_abc = pd.concat([abc, interval_abc], axis=1)
-        all_abc.dropna(axis=0, how='any', inplace=True)
-        datasets[label][sort_basin[file_names.index(file_name)]] = all_abc
+        if np.max(max_value)>1:
+            plot_range = [np.floor(min_value), np.ceil(max_value)]  # Provide plot_range as a list
+        else:
+            plot_range = [min_value, max_value]  # Provide plot_range as a list
+        print('Min_range:', plot_range[0], 'Max_range:', plot_range[1])
 
-    return datasets
-
-
-def plot_CRMS(datasets,MA_datasets,file_name_o,plot_range, plot_space): # ["Temp","Salinity","WL","W_depth","W_HP","WL_SLR","W_depth_SLR","W_HP_SLR"]
-    plt.clf()
-    fig, ax = plt.subplots(figsize=(6,3))
+    fig, ax = plt.subplots(figsize=(6, 3))
     ax.set_xlabel('Year')
+
+    ####################################################################################################################
+    # Automatically set up the x-axis for date formatting
+    ####################################################################################################################
+    # Convert plot_period from strings to datetime objects
+    start_date = datetime.strptime(plot_period[0], '%Y-%m-%d')
+    end_date = datetime.strptime(plot_period[1], '%Y-%m-%d')
+
+    data_length_in_years = (end_date - start_date).days / 365.25     # Calculate data length in years
+
+    # Set x-axis date formatter based on the data length
+    assert data_length_in_years > 0, "Invalid data period. The end date must be after the start date."
+
+    ax.set_xlabel('Year')
+
+    # Set x-axis date formatter and locator based on the data length
+    if data_length_in_years <= 1.5:
+        ax.xaxis.set_major_formatter(mp_dates.DateFormatter('%Y-%m'))
+        plot_xspace = mp_dates.MonthLocator(interval=3)  # Every 3 months
+    elif data_length_in_years > 1.5 and data_length_in_years <= 3:
+        ax.xaxis.set_major_formatter(mp_dates.DateFormatter('%Y-%m'))
+        plot_xspace = mp_dates.MonthLocator(interval=6)  # Every 6 months
+    else:
+        ax.xaxis.set_major_formatter(mp_dates.DateFormatter('%Y'))
+        plot_xspace = mp_dates.YearLocator(base=max(1, round(data_length_in_years / 4)))  # Ensure at least 1 year
+
+    # Set x-axis ticks using the appropriate locator
+    ax.xaxis.set_major_locator(plot_xspace)
+
+    ####################################################################################################################
+    # handle specified stations
+    ####################################################################################################################
+
+    if station:
+        if isinstance(station, list):
+            title_suffix = f" at {len(station)} stations"
+            if len(station)>= 5:
+                title_out = "multi_stations"
+            else:
+                title_out = "_".join([s.replace('CRMS', '') for s in station])
+        else:
+            title_suffix = f" at {station.replace('CRMS', '')}"
+            title_out = station.replace('-', ' ')
+    else:
+        title_suffix = " (Median Across Stations)"
+        title_out = "median"
+
     if file_name_o == "WL":
         ax.set_ylabel(u'Water level [NAVD88,m]')
-        output = os.path.join(Photospace,'Water_level.png')
+        output = os.path.join(Photospace, f'Water_level_{title_out}.png')
+        if station:
+            if isinstance(station, list):
+                for st in station:
+                    ax.plot(MA_datasets["WL"].index, MA_datasets["WL"][st], label=f'{st}', linewidth=1)
+            else:
+                ax.plot(MA_datasets["WL"].index, MA_datasets["WL"][station], 'k--', linewidth=1)
+        else:
+            ax.plot(MA_datasets["WL"].index, MA_datasets["WL"].median(axis=1, skipna=True), 'k--', linewidth=1)
+            plt.fill_between(MA_datasets["WL"].index, MA_datasets["WL"].quantile(q=0.25, axis=1),
+                             MA_datasets["WL"].quantile(q=0.75, axis=1), alpha=0.9, linewidth=0, color='grey')
+
     elif file_name_o == "W_HP":
         ax.set_ylabel(u'Hydroperiod')
-        output = os.path.join(Photospace,'Hydroperiod.png')
+        output = os.path.join(Photospace, f'Hydro_period_{title_out}.png')
+        if station:
+            if isinstance(station, list):
+                for st in station:
+                    ax.plot(MA_datasets["W_HP"].index, MA_datasets["W_HP"][st], label=f'{st}', linewidth=1)
+            else:
+                ax.plot(MA_datasets["W_HP"].index, MA_datasets["W_HP"][station], 'k--', linewidth=1)
+        else:
+            ax.plot(MA_datasets["W_HP"].index, MA_datasets["W_HP"].median(axis=1, skipna=True), 'k--', linewidth=1)
+            plt.fill_between(MA_datasets["W_HP"].index, MA_datasets["W_HP"].quantile(q=0.25, axis=1),
+                             MA_datasets["W_HP"].quantile(q=0.75, axis=1), alpha=0.9, linewidth=0, color='grey')
+
     elif file_name_o == "W_depth":
         ax.set_ylabel(u'Inundation depth [m]')
-        output = os.path.join(Photospace,'Water_level.png')
+        output = os.path.join(Photospace, f'Water_depth_{title_out}.png')
+        if station:
+            if isinstance(station, list):
+                for st in station:
+                    ax.plot(MA_datasets["W_depth"].index, MA_datasets["W_depth"][st], label=f'{st}', linewidth=1)
+            else:
+                ax.plot(MA_datasets["W_depth"].index, MA_datasets["W_depth"][station], 'k--', linewidth=1)
+        else:
+            ax.plot(MA_datasets["W_depth"].index, MA_datasets["W_depth"].median(axis=1, skipna=True), 'k--',
+                    linewidth=1)
+            plt.fill_between(MA_datasets["W_depth"].index, MA_datasets["W_depth"].quantile(q=0.25, axis=1),
+                             MA_datasets["W_depth"].quantile(q=0.75, axis=1), alpha=0.9, linewidth=0, color='grey')
 
-    ax.plot(MA_datasets[file_name_o].index, MA_datasets[file_name_o].median(axis=1,skipna=True),'k--',linewidth=1)
-    plt.fill_between(MA_datasets[file_name_o].index, MA_datasets[file_name_o].quantile(q=0.25,axis=1), MA_datasets[file_name_o].quantile(q=0.75,axis=1), alpha=0.9, linewidth=0, color='grey')
+    elif file_name_o == "Salinity":
+        ax.set_ylabel(u'Salinity [ppt]')
+        output = os.path.join(Photospace, f'Salinity_{title_out}.png')
+        if station:
+            if isinstance(station, list):
+                for st in station:
+                    ax.plot(MA_datasets["Salinity"].index, MA_datasets["Salinity"][st], label=f'{st}', linewidth=1)
+                    ax.plot(MA_datasets_discrete["Pore_10"].index, MA_datasets_discrete["Pore_10"][st], 'g--',
+                            linewidth=1)
+                    ax.plot(MA_datasets_discrete["Pore_30"].index, MA_datasets_discrete["Pore_30"][st], 'r--',
+                            linewidth=1)
+            else:
+                ax.plot(MA_datasets["Salinity"].index, MA_datasets["Salinity"][station], 'k--', linewidth=1)
+                ax.plot(MA_datasets_discrete["Pore_10"].index, MA_datasets_discrete["Pore_10"][station], 'g--',
+                        linewidth=1)
+                ax.plot(MA_datasets_discrete["Pore_30"].index, MA_datasets_discrete["Pore_30"][station], 'r--',
+                        linewidth=1)
+        else:
+            ax.plot(MA_datasets["Salinity"].index, MA_datasets["Salinity"].median(axis=1, skipna=True), 'k--',
+                    linewidth=1)
+            ax.plot(MA_datasets_discrete["Pore_10"].index, MA_datasets_discrete["Pore_10"].median(axis=1, skipna=True),
+                    'g--', linewidth=1)
+            ax.plot(MA_datasets_discrete["Pore_30"].index, MA_datasets_discrete["Pore_30"].median(axis=1, skipna=True),
+                    'r--', linewidth=1)
+
+            plt.fill_between(MA_datasets_discrete["Pore_30"].index,
+                             MA_datasets_discrete["Pore_30"].quantile(q=0.25, axis=1),
+                             MA_datasets_discrete["Pore_30"].quantile(q=0.75, axis=1), alpha=0.5, linewidth=0,
+                             color='r')
+            plt.fill_between(MA_datasets_discrete["Pore_10"].index,
+                             MA_datasets_discrete["Pore_10"].quantile(q=0.25, axis=1),
+                             MA_datasets_discrete["Pore_10"].quantile(q=0.75, axis=1), alpha=0.5, linewidth=0,
+                             color='g')
+            plt.fill_between(MA_datasets["Salinity"].index, MA_datasets["Salinity"].quantile(q=0.25, axis=1),
+                             MA_datasets["Salinity"].quantile(q=0.75, axis=1), alpha=0.9, linewidth=0, color='grey')
+
+        ax.legend(['Pore d30', 'Pore d10', 'Surface'])
+
+    else:
+        raise ValueError("Unsupported file name. The file name must be one of 'WL', 'W_HP', 'W_depth', or 'Salinity'.")
+
+    if station:
+        plt.text(0.05, 0.95, f"{file_name_o} {title_suffix}", horizontalalignment='left', verticalalignment='top',
+                 transform=ax.transAxes)
+
     plt.xlim(mp_dates.date2num(plot_period))
     plt.ylim(plot_range)
-    major_ticks = np.arange(plot_range[0], plot_range[1]+0.01, plot_space)
+    if (plot_range[1]-plot_range[0])/4 >= plot_space:
+        plot_space = round((plot_range[1]-plot_range[0])/4,2)
+    major_ticks = np.arange(plot_range[0], plot_range[1] + 0.01, plot_space)
     ax.set_yticks(major_ticks)
-    plt.grid(color = 'k', linestyle = '--', linewidth = 0.1)
-    plt.savefig(output,dpi=600,bbox_inches='tight')
+    plt.grid(color='k', linestyle='--', linewidth=0.1)
+    if isinstance(station, list):
+        ax.legend()
+    plt.savefig(output, dpi=600, bbox_inches='tight')
     plt.show()
     plt.close()
 
-
-def calculate_trends(df_MA, trend_columns,subdomain=False, sort_domain_list=None):
-    trends = []
-    boolean = []
-
-    if subdomain:
-        for i, j in enumerate(sort_domain_list):
-            print(j)
-            judge = adf_test(df_MA[trend_columns][j])
-            boolean.append(judge)
-            slopes, intercepts = linear_slope(df_MA[trend_columns][j])
-            trends.append([slopes, intercepts])
-    else:
-        for i in df_MA.columns[trend_columns]:
-            print(i)
-            judge = adf_test(df_MA[i])
-            boolean.append(judge)
-            slopes, intercepts = linear_slope(df_MA[i])
-            trends.append([slopes, intercepts])
-
-    for i, boolean_value in enumerate(boolean):
-        if boolean_value == 'False':
-            trends[i] = [np.nan] * len(trends[i])
-
-    return trends
-
-def explore_map(polygon, point,Community):
-    base = polygon.explore(
-        column="BASIN",
-        scheme="naturalbreaks",
-        legend=True,
-        k=10,
-        tooltip=False,
-        legend_kwds=dict(colorbar=False),
-        name="Basin",
-    )
-
-    point.explore(
-        m=base,
-        color="red" if Community == "station" else None,
-        column=None if Community == "station" else Community,
-        scheme=None if Community == "station" else "naturalbreaks",
-        legend=True,
-        marker_kwds=dict(radius=5, fill=True),
-        name=Community,
-    )
-
-    folium.LayerControl().add_to(base)
-
-    return base
-
-def create_subdomain_index(grouped_data, list_values):
-    subdomain_index = {}
-    key_list = []
-
-    for name, data in grouped_data.items():
-        subdomain_index[name] = {}
-
-        for value in list_values:
-            if value in data.groups:
-                subdomain_index[name][value] = data.get_group(value)["CRMS_Sta"].values
-                key_list.append(value)
-            else:
-                subdomain_index[name][value] = []
-
-    return subdomain_index, key_list
-
-
-def create_subdomain_datasets(datasets, file_name_o, subdomain_index, sort_list, output_path, subset_name):
-    MA_subsets = {}  # moving average dictionary
-    for i in file_name_o:
-        print("Variable is \t", i)
-        df_median = pd.DataFrame()  # empty dataframe
-        MA_subsets[i] = {}  # moving average dictionary (nested dictionary)
-        df_median_MA = pd.DataFrame()  # empty dataframe
-        if i in ["W_HP", "W_depth", "W_HP_SLR", "W_depth_SLR"]:
-            k = "W2M"  # this is the original data
-        elif i == "WL_SLR":
-            k = "WL"  # this is the original data
-        else:
-            k = i
-
-        for j in sort_list:
-            if i == "W_depth" and k =="W2M":
-                print (i,j)
-            df1 = datasets[i].loc[:, subdomain_index[k][j]]
-            output_name1 = i + '_subset_' + subset_name + '_' + j + '.csv'
-            df1.to_csv(os.path.join(output_path, output_name1))  # save each subset dataset for each variable
-
-            # Calculate subset median
-            median_values = df1.median(axis=1, skipna=True)
-            num_available_columns = df1.count(axis=1)
-            print(j, df1.shape, num_available_columns)
-            median_values[num_available_columns < df1.shape[1] / 3] = np.nan  # Still think about the criterion.
-            df_median[j] = median_values
-
-            # Calculate moving average
-            MA_subsets[i][j] = df1.rolling(window=MA_window, center=True).mean()  # we could add min_periods=9 min_period is a rough criterion
-            # Calculate subset median for moving average
-            median_values2 = MA_subsets[i][j].median(axis=1, skipna=True)
-            num_available_columns2 = MA_subsets[i][j].count(axis=1)
-            median_values2[num_available_columns2 < MA_subsets[i][j].shape[1] / 3] = np.nan  # Still think about the criterion.
-            df_median_MA[j] = median_values2
-
-            output_name2 = i + '_subset_' + subset_name + '_median.csv'
-            df_median.to_csv(os.path.join(output_path, output_name2))
-            output_name3 = i + '_subset_' + subset_name + '_median_MA.csv'
-            df_median_MA.to_csv(os.path.join(output_path, output_name3))
-
-    return MA_subsets
-
-# For heatmap
-def create_subdomain_correlation(datasets, file_name_o, sort_list, SST_basin, Q_data, subdomain_prcp, output_path, subset_name):
-    subdomain_datasets = {}  # monthly average dataset
-    corr_subdomain = {}
-
-    for i in sort_list:
-        print(i)
-        df = pd.DataFrame()
-        subdomain_datasets[i] = {}
-        for j in file_name_o:
-            subdomain_datasets[i][j] = datasets[j][i]
-            df[j] = subdomain_datasets[i][j]
-
-        df['GoM SST'] = SST_basin['GoM SST']
-        if subset_name == 'basin' and (i == 'ME' or i == 'CS'):
-            df['Q'] = Q_data.query('index >= @start_date and index <= @end_date')['cms']
-        else:
-            df['Q'] = SST_basin['AR_Q']
-        df['Prcp'] = subdomain_prcp.query('index >= @start_date and index <= @end_date')[i].values
-        df['U10'] = SST_basin['U10']
-        df['V10'] = SST_basin['V10']
-        df = df.rename(columns={'Temp': 'CRMS ST'})  # Change column name
-        # column_reorder = list(range(5, df.shape[1])) + [1, 0, 2, 4, 3]  # column name reorder index
-        # df_reorder = df.iloc[:, column_reorder]
-        reorder_list =['GoM SST', 'Q', 'Prcp','U10', 'V10','CRMS ST','WL','Salinity', 'W_depth', 'W_HP']
-        df_reorder = df.reindex(reorder_list, axis=1)
-        output_name = subset_name + '_' + i + '.csv'
-        df_reorder.to_csv(os.path.join(output_path, output_name))
-
-        # only for heatmap
-        df_reorder2 = df_reorder.copy()
-        df_reorder2 = df_reorder2.rename(columns={'Q':'$\it{Q}$','Prcp': '$\it{P}$','U10':'$\it{U}$10','V10':'$\it{V}$10','Salinity': '$\it{S}$', 'WL': r'$\xi$'})
-        df_reorder2.drop(['W_HP','W_depth'], axis=1, inplace=True)
-        corr_subdomain[i] = df_reorder2.corr()
-
-        output = os.path.join(Photospace,'basin_heat_' + i + '.png')
-        heatplot(corr_subdomain[i], output)
-
-    return corr_subdomain
-
-def heatplot(correlation, output):
-    # Set up the matplotlib figure
-    f, ax = plt.subplots(figsize=(6, 6))
-
-    # applying mask
-    mask = np.triu(np.ones_like(correlation))
-
-    # Draw the heatmap with the mask and correct aspect ratio
-    sns.heatmap(correlation, mask=mask,annot=True,fmt=".2f",cmap="RdBu_r",vmin=-0.6, vmax=1) #mask=False
-
-    # Display the heatmap plot
-    plt.savefig(output,dpi=600,bbox_inches='tight')
-    #plt.show()
-    plt.close()
-
-    #return plt.show()
-
-
-def adf_test(MA_df):  # input muoving average
-    # # ADF Test check the data is stationaly or not
-
-    adft = adfuller(MA_df.dropna(), autolag="AIC")
-    output_df = pd.DataFrame(
-        {"Values": [adft[0], adft[1], adft[2], adft[3], adft[4]['1%'], adft[4]['5%'], adft[4]['10%']],
-         "Metric": ["Test Statistics", "p-value", "No. of lags used", "Number of observations used",
-                    "critical value (1%)", "critical value (5%)", "critical value (10%)"]})
-    print(output_df)
-    if adft[0] < adft[4]["5%"]:
-        print("Reject Ho - Time Series is Stationary")
-        judge = 'False'  # Stationary
-    else:
-        print("Failed to Reject Ho - Time Series is Non-Stationary")
-        judge = 'True'  # Non-Stationary
-    return judge
-
-
-def linear_slope(df_MA):
-    slope_MA = pd.DataFrame(df_MA.copy())
-    # time_values = (df_MA.index - df_MA.index[0]).days/ 365.25
-    slope_MA.index = (df_MA.index - pd.Timestamp("1981-1-1")) // pd.Timedelta(days=1) / 365.25
-    # slope_MA.index=time_values
-    slope_MA = slope_MA.dropna()
-    # print(slope_MA)
-    # dataset= pd.DataFrame(slope_MA[variable])
-    # dataset=dataset.dropna()
-
-    # Fit a linear regression model to the data
-    slope, intercept, r_value, p_value, std_err = stats.linregress(slope_MA.index, slope_MA.iloc[:, 0])
-
-    # The 'slope' variable now contains the slope of the linear regression line
-    print("Slope:", slope, "Intercept", intercept, "R_value", r_value, "p_value", p_value)
-
-    return slope, intercept
 
 def data_analysis ():
     ########################################################################
     print ('Data_anaysis')
     ######################################################################
 
-    ### 1.1 Import modules ###
+    # Main function to perform data analysis and plotting.
+    # Allows users to specify state and date as command line arguments.
+    global start_date, end_date,station_list  # Refer to the global variables
 
 
+    # Set up argument parser
+    parser = argparse.ArgumentParser(description="CRMS2Plot: Data analysis and plotting tool")
+    parser.add_argument("--sdate", type=str, default="2008-01-01", help="State date for the data analysis (format: YYYY-MM-DD)")
+    parser.add_argument("--edate", type=str, default="2024-12-31", help="End date for the data analysis (format: YYYY-MM-DD)")
+    parser.add_argument("--plotdata", type=str, default="MA", help="Plot original data (org) or moving average data (MA)")
+    parser.add_argument("--staionfile", type=str, default=None, help="Path to station list file <stationlist.txt> (format: CRMSxxxx)")
+
+    # Parse the arguments
+    args = parser.parse_args()
+
+    # Extract the parsed arguments
+    start_date = args.sdate
+    end_date = args.edate
+    plot_data = args.plotdata
+    stationFile = args.staionfile
+
+    # Here you can use the `state` and `date` variables in your data analysis logic
+    print(f"Performing analysis for between {start_date} - {end_date}")
     # The target working directory
 
-    # Make Output folder
-    Workspace = "C:/Users/jikeda/Desktop/CRMS2Map/CRMS_devtest"
-
-    # Print the current working directory
-    print("Current working directory: {0}".format(os.getcwd()))
-
-    # Change the current working directory
-    os.chdir(Workspace)
-
-    Photospace = os.path.join(Workspace, 'Photo')
-    #Output_space=os.path.join(Workspace,'bootstrap_Output')
-
-    try:
-        os.mkdir(Photospace)
-    except:
-        pass
-
     ### Parameters ###########################################################
-    start_date = '2008-01-01' # 'yyyy-mm-dd'
-    start_date_climate = '1981-01-01' # 'yyyy-mm-dd'
-    end_date = '2024-02-29'   # 'yyyy-mm-dd'
     threshold1 = 200 # Delete columns where 'num_station' is lower than the threshold for continuous data
     threshold2 = int(threshold1/2) # Delete columns where 'num_station' is lower than the threshold for discrete data
 
@@ -542,163 +495,26 @@ def data_analysis ():
     print('\n##########################################################################################################################\n')
     ######################################################################
 
-    # # Plot CRMS data
+    if plot_data == "MA":
+        contious_datasets = MA_datasets.copy()
+        discrete_datasets = MA_datasets_discrete.copy()
+    else:
+        contious_datasets = datasets.copy()
+        discrete_datasets = datasets_discrete.copy()
 
-    def plot_CRMS(datasets, MA_datasets, MA_datasets_discrete, file_name_o, plot_period, plot_space, plot_range=None,
-                  station=None):
-        """
-        General function to plot water level, hydroperiod, inundation depth, salinity, and other environmental data.
+    if stationFile:
+        # assert Inputspace, "The input space must be defined to use the station file."
+        # stationFile = os.path.join(Inputspace, stationFile)
+        path = os.getcwd()
+        assert os.path.exists(stationFile), f"The station file {stationFile} does not exist in {path}."
+        station_list = np.loadtxt(stationFile, dtype=str).tolist()
+        print(f"Using station list from {stationFile}",station_list)
 
-        Parameters:
-        - datasets: dict of datasets
-        - MA_datasets: dict containing main datasets (water level, salinity, etc.)
-        - MA_datasets_discrete: dict containing discrete datasets (for pore water, etc.)
-        - file_name_o: str, the type of plot ("WL", "Salinity", "W_HP", etc.)
-        - plot_period: list or tuple, the period over which to plot the data
-        - plot_range: list or tuple, the y-axis range for the plot
-        - plot_space: float, the spacing of y-axis ticks
-        - station: str or list, optional, the CRMS station(s) to plot data for. If None, plots the median across all stations.
-        """
-        # Automatically defined based on data
-        if plot_range is None:
-            if station:
-                if isinstance(station, list):
-                    min_value = round(MA_datasets[file_name_o][station].min().min() - 0.05,1)
-                    max_value = round(MA_datasets[file_name_o][station].max().max() + 0.05,1)
-                else:
-                    min_value = round(MA_datasets[file_name_o][station].min() - 0.05,1)
-                    max_value = round(MA_datasets[file_name_o][station].max() + 0.05,1)
-            else:
-                # Calculate the 10th percentile at each time step
-                quantiles_low = MA_datasets[file_name_o].quantile(q=0.25, axis=1)
-                quantiles_high = MA_datasets[file_name_o].quantile(q=0.75, axis=1)
-
-                # Take the minimum and maximum of these quantiles across all time steps
-                min_value = round(quantiles_low.min() - 0.01,1)
-                max_value = round(quantiles_high.max() + 0.01,1)
-
-            if np.max(max_value)>1:
-                plot_range = [np.floor(min_value), np.ceil(max_value)]  # Provide plot_range as a list
-            else:
-                plot_range = [min_value, max_value]  # Provide plot_range as a list
-            print('Min_range:', plot_range[0], 'Max_range:', plot_range[1])
-
-        fig, ax = plt.subplots(figsize=(6, 3))
-        ax.set_xlabel('Year')
-
-        if station:
-            if isinstance(station, list):
-                title_suffix = f" at {len(station)} stations"
-            else:
-                title_suffix = f" at {station.replace('CRMS', '')}"
-        else:
-            title_suffix = " (Median Across Stations)"
-
-        if file_name_o == "WL":
-            ax.set_ylabel(u'Water level [NAVD88,m]')
-            output = os.path.join(Photospace, f'Water_level_{station if station else "all"}.png')
-            if station:
-                if isinstance(station, list):
-                    for st in station:
-                        ax.plot(MA_datasets["WL"].index, MA_datasets["WL"][st], label=f'{st}', linewidth=1)
-                else:
-                    ax.plot(MA_datasets["WL"].index, MA_datasets["WL"][station], 'k--', linewidth=1)
-            else:
-                ax.plot(MA_datasets["WL"].index, MA_datasets["WL"].median(axis=1, skipna=True), 'k--', linewidth=1)
-                plt.fill_between(MA_datasets["WL"].index, MA_datasets["WL"].quantile(q=0.25, axis=1),
-                                 MA_datasets["WL"].quantile(q=0.75, axis=1), alpha=0.9, linewidth=0, color='grey')
-
-        elif file_name_o == "W_HP":
-            ax.set_ylabel(u'Hydroperiod')
-            output = os.path.join(Photospace, f'Hydro_period_{station if station else "all"}.png')
-            if station:
-                if isinstance(station, list):
-                    for st in station:
-                        ax.plot(MA_datasets["W_HP"].index, MA_datasets["W_HP"][st], label=f'{st}', linewidth=1)
-                else:
-                    ax.plot(MA_datasets["W_HP"].index, MA_datasets["W_HP"][station], 'k--', linewidth=1)
-            else:
-                ax.plot(MA_datasets["W_HP"].index, MA_datasets["W_HP"].median(axis=1, skipna=True), 'k--', linewidth=1)
-                plt.fill_between(MA_datasets["W_HP"].index, MA_datasets["W_HP"].quantile(q=0.25, axis=1),
-                                 MA_datasets["W_HP"].quantile(q=0.75, axis=1), alpha=0.9, linewidth=0, color='grey')
-
-        elif file_name_o == "W_depth":
-            ax.set_ylabel(u'Inundation depth [m]')
-            output = os.path.join(Photospace, f'Water_depth_{station if station else "all"}.png')
-            if station:
-                if isinstance(station, list):
-                    for st in station:
-                        ax.plot(MA_datasets["W_depth"].index, MA_datasets["W_depth"][st], label=f'{st}', linewidth=1)
-                else:
-                    ax.plot(MA_datasets["W_depth"].index, MA_datasets["W_depth"][station], 'k--', linewidth=1)
-            else:
-                ax.plot(MA_datasets["W_depth"].index, MA_datasets["W_depth"].median(axis=1, skipna=True), 'k--',
-                        linewidth=1)
-                plt.fill_between(MA_datasets["W_depth"].index, MA_datasets["W_depth"].quantile(q=0.25, axis=1),
-                                 MA_datasets["W_depth"].quantile(q=0.75, axis=1), alpha=0.9, linewidth=0, color='grey')
-
-        elif file_name_o == "Salinity":
-            ax.set_ylabel(u'Salinity [ppt]')
-            output = os.path.join(Photospace, f'Salinity_{station if station else "all"}.png')
-            if station:
-                if isinstance(station, list):
-                    for st in station:
-                        ax.plot(MA_datasets["Salinity"].index, MA_datasets["Salinity"][st], label=f'{st}', linewidth=1)
-                        ax.plot(MA_datasets_discrete["Pore_10"].index, MA_datasets_discrete["Pore_10"][st], 'g--',
-                                linewidth=1)
-                        ax.plot(MA_datasets_discrete["Pore_30"].index, MA_datasets_discrete["Pore_30"][st], 'r--',
-                                linewidth=1)
-                else:
-                    ax.plot(MA_datasets["Salinity"].index, MA_datasets["Salinity"][station], 'k--', linewidth=1)
-                    ax.plot(MA_datasets_discrete["Pore_10"].index, MA_datasets_discrete["Pore_10"][station], 'g--',
-                            linewidth=1)
-                    ax.plot(MA_datasets_discrete["Pore_30"].index, MA_datasets_discrete["Pore_30"][station], 'r--',
-                            linewidth=1)
-            else:
-                ax.plot(MA_datasets["Salinity"].index, MA_datasets["Salinity"].median(axis=1, skipna=True), 'k--',
-                        linewidth=1)
-                ax.plot(MA_datasets_discrete["Pore_10"].index, MA_datasets_discrete["Pore_10"].median(axis=1, skipna=True),
-                        'g--', linewidth=1)
-                ax.plot(MA_datasets_discrete["Pore_30"].index, MA_datasets_discrete["Pore_30"].median(axis=1, skipna=True),
-                        'r--', linewidth=1)
-
-                plt.fill_between(MA_datasets_discrete["Pore_30"].index,
-                                 MA_datasets_discrete["Pore_30"].quantile(q=0.25, axis=1),
-                                 MA_datasets_discrete["Pore_30"].quantile(q=0.75, axis=1), alpha=0.5, linewidth=0,
-                                 color='r')
-                plt.fill_between(MA_datasets_discrete["Pore_10"].index,
-                                 MA_datasets_discrete["Pore_10"].quantile(q=0.25, axis=1),
-                                 MA_datasets_discrete["Pore_10"].quantile(q=0.75, axis=1), alpha=0.5, linewidth=0,
-                                 color='g')
-                plt.fill_between(MA_datasets["Salinity"].index, MA_datasets["Salinity"].quantile(q=0.25, axis=1),
-                                 MA_datasets["Salinity"].quantile(q=0.75, axis=1), alpha=0.9, linewidth=0, color='grey')
-
-            ax.legend(['Pore d30', 'Pore d10', 'Surface'])
-
-        else:
-            raise ValueError("Unsupported file name. The file name must be one of 'WL', 'W_HP', 'W_depth', or 'Salinity'.")
-
-        if station:
-            plt.text(0.05, 0.95, f"{file_name_o} {title_suffix}", horizontalalignment='left', verticalalignment='top',
-                     transform=ax.transAxes)
-
-        plt.xlim(mp_dates.date2num(plot_period))
-        plt.ylim(plot_range)
-        major_ticks = np.arange(plot_range[0], plot_range[1] + 0.01, plot_space)
-        ax.set_yticks(major_ticks)
-        plt.grid(color='k', linestyle='--', linewidth=0.1)
-        if isinstance(station, list):
-            ax.legend()
-        plt.savefig(output, dpi=600, bbox_inches='tight')
-        plt.show()
-        plt.close()
-
-    station_list = ["CRMS0002","CRMS0003"]
-    #plot_CRMS(datasets, MA_datasets, MA_datasets_discrete, "WL", plot_period, 0.1)
-    #plot_CRMS(datasets, MA_datasets, MA_datasets_discrete, "Salinity", plot_period, 4)
-    # plot_CRMS(datasets, MA_datasets, MA_datasets_discrete, "W_HP", plot_period, 0.2)
-    # plot_CRMS(datasets, MA_datasets, MA_datasets_discrete, "W_depth", plot_period, 0.1)
-    plot_CRMS(datasets, MA_datasets, MA_datasets_discrete, "WL", plot_period, 0.1,plot_range=None, station=station_list)
+    #plot_CRMS(contious_datasets, discrete_datasets, "WL", plot_period, 0.1)
+    #plot_CRMS(contious_datasets, discrete_datasets, "Salinity", plot_period, 4)
+    #plot_CRMS(contious_datasets, discrete_datasets, "W_HP", plot_period, 0.2)
+    #plot_CRMS(contious_datasets, discrete_datasets, "W_depth", plot_period, 0.1)
+    plot_CRMS(contious_datasets, discrete_datasets, "WL", plot_period, 0.1,plot_range=None, station=station_list)
 
 
 
@@ -1450,4 +1266,5 @@ def data_analysis ():
     # # plt.show()
     # # plt.close()
 
-data_analysis()
+if __name__ == "__main__":
+    data_analysis()
