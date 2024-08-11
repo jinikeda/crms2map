@@ -57,7 +57,7 @@ CRMS2Plot: Data analysis and plotting tool after step.2
 
 <img src="https://github.com/jinikeda/CRMS2Map/blob/main/Image/Water_level_median.png" alt="Long-term water level" height="250">
 
-<p style="text-align: left;"><strong>Figure.1</strong> Median and water levels across coastal Louisiana for long-term water level change study using a 12-month moving average window. The inter-quantile range between Q1 and Q3 is shaded grey. Command: CRMS2Plot</p>
+<p style="text-align: left;"><strong>Figure.1</strong> Median water levels across coastal Louisiana for long-term water level change study using a 12-month moving average window. The inter-quantile range between Q1 and Q3 is shaded grey. Command: CRMS2Plot</p>
 
 <p align="left">
   <img src="https://github.com/jinikeda/CRMS2Map/blob/main/Image/Water_depth_multi_stations.png" alt="Ida_inundation depth" height="250">
