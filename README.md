@@ -63,7 +63,7 @@ CRMS2Plot: Data analysis and plotting tool after step.2
   <img src="https://github.com/jinikeda/CRMS2Map/blob/main/Image/Water_depth_multi_stations.png" alt="Ida_inundation depth" height="250">
   <img src="https://github.com/jinikeda/CRMS2Map/blob/main/Image/Salinity_multi_stations.png" alt="Ida salinity" height="250">
 </p>
-<p style="text-align: left;"><strong>Figure.2</strong> Inundation depth (left) and salinity (right) at multiple CRMS stations during Hurricane Ida in 2021. Command: pCRMS2Plot --sdate 2021-08-28 --edate 2021-09-03 --plotdata org --save False --data_type H --staionfile station_list.txt</p>
+<p style="text-align: left;"><strong>Figure.2</strong> Inundation depth (left) and salinity (right) at multiple CRMS stations during Hurricane Ida in 2021. Command: CRMS2Plot --sdate 2021-08-28 --edate 2021-09-03 --plotdata org --save False --data_type H --staionfile station_list.txt</p>
 
 ### Release history
 CRMS2Map v1.0: First release on Aug/08/2024 (Only release CRMS2Plot. Interpolation and mapping tools will be released after paper publication)
