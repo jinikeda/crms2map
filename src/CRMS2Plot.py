@@ -248,17 +248,23 @@ def plot_CRMS(
         data_length = (end_date - start_date).total_seconds() / (
             3600 * 24
         )  # Data length in days
+        if data_length <= 1:
+            print(f"Data Length: {data_length*24} hours")
+        else:
+            print(f"Data Length: {data_length} days")
     elif Data_type == "D":
         data_length = (end_date - start_date).days  # Data length in days
+        print(f"Data Length: {data_length} days")
     else:
         data_length = (end_date - start_date).days / 365.25  # Data length in years
+        print(f"Data Length: {data_length} years" )
 
     # Set x-axis date formatter based on the data length
     assert (
         data_length > 0
     ), "Invalid data period. The end date must be after the start date."
 
-    print(f"Data Length: {data_length}")
+
 
     # Set x-axis date formatter and locator based on the data length and type
     if Data_type == "H":
@@ -336,7 +342,7 @@ def plot_CRMS(
     if Data_type == "H" or Data_type == "D":
         ax.set_xlabel("Date")
         # Rotate the x-axis labels for better readability
-        if data_length <= 31:
+        if data_length <= 5:
             plt.xticks(rotation=45, ha="right")
     else:
         ax.set_ylabel("Year")
@@ -511,19 +517,22 @@ def plot_CRMS(
                         label=f"{st}",
                         linewidth=1,
                     )
-                    if Data_type == "M" or Data_type == "Y":
-                        ax.plot(
-                            datasets_discrete["Pore_10"].index,
-                            datasets_discrete["Pore_10"][st],
-                            "g--",
-                            linewidth=1,
-                        )
-                        ax.plot(
-                            datasets_discrete["Pore_30"].index,
-                            datasets_discrete["Pore_30"][st],
-                            "r--",
-                            linewidth=1,
-                        )
+
+                    # User can change the display option
+
+                    # if Data_type == "M" or Data_type == "Y":
+                    #     ax.plot(
+                    #         datasets_discrete["Pore_10"].index,
+                    #         datasets_discrete["Pore_10"][st],
+                    #         "g--",
+                    #         linewidth=1,
+                    #     )
+                    #     ax.plot(
+                    #         datasets_discrete["Pore_30"].index,
+                    #         datasets_discrete["Pore_30"][st],
+                    #         "r--",
+                    #         linewidth=1,
+                    #     )
             else:
                 ax.plot(
                     datasets_continous["Salinity"].index,
@@ -666,7 +675,7 @@ def data_analysis():
 
     parser.add_argument(
         "--save",
-        action="store_true",
+        type=str2bool,
         default=True,
         help="Save as a single (bundled) dataset and MA_datasets. This is time-consuming when the user uses high spatial datasets.",
     )
@@ -813,8 +822,9 @@ def data_analysis():
         file_name, file_name_o, file_suffix, MA_window, threshold1
     )
 
-    print("\n\n Save datasets! Please patience! \n\n")
     if Save_Flag:
+        print(Save_Flag)
+        print("\n\n Save datasets! Please patience! \n\n")
         with pd.ExcelWriter(os.path.join(Outputspace, "MA_timeseries.xlsx")) as writer:
             for variable in file_name_o:
                 MA_datasets[variable].to_excel(writer, sheet_name=variable)
@@ -907,7 +917,7 @@ def data_analysis():
     else:
         station_list = None
 
-    # plot_CRMS(contious_datasets, discrete_datasets, "Temp", plot_period, 2, plot_range=None, station=station_list)
+    plot_CRMS(contious_datasets, discrete_datasets, "Temp", plot_period, 2, plot_range=None, station=station_list)
     plot_CRMS(
         contious_datasets,
         discrete_datasets,
@@ -926,17 +936,9 @@ def data_analysis():
         plot_range=None,
         station=station_list,
     )
-    # plot_CRMS(contious_datasets, discrete_datasets, "W_HP", plot_period, 0.2,plot_range=None,station=station_list)
-    # plot_CRMS(contious_datasets, discrete_datasets, "W_depth", plot_period, 0.1,plot_range=None,station=station_list)
-    # plot_CRMS(
-    #     contious_datasets,
-    #     discrete_datasets,
-    #     "WL",
-    #     plot_period,
-    #     0.1,
-    #     plot_range=None,
-    #     station=station_list,
-    # )
+
+    plot_CRMS(contious_datasets, discrete_datasets, "W_HP", plot_period, 0.2,plot_range=None,station=station_list)
+    plot_CRMS(contious_datasets, discrete_datasets, "W_depth", plot_period, 0.1,plot_range=None,station=station_list)
 
     # ### Step 4 ###########################################################
     # print('##########################################################################################################################\n')
