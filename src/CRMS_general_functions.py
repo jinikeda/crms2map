@@ -67,8 +67,8 @@ def get_CRMS_file(Data):
         3: "CRMS_Water_Elevation_to_Marsh.csv",
         4: "CRMS_Water_Temp.csv",
         5: "Something_wrong",
-        6: "CRMS_Water_Elevation_to_Marsh.csv",  # "CRMS_Water_Elevation_to_Marsh_2006_2024_wd.csv", # hidden file for hydrographic data
-        7: "CRMS_Water_Elevation_to_Marsh.csv",  # "CRMS_Water_Elevation_to_Marsh_2006_2024_wdepth.csv" # hidden file for inundation data
+        6: "CRMS_Water_Elevation_to_Marsh_wd.csv",  # "CRMS_Water_Elevation_to_Marsh_2006_2024_wd.csv", # hidden file for hydrographic data
+        7: "CRMS_Water_Elevation_to_Marsh_wdepth.csv",  # "CRMS_Water_Elevation_to_Marsh_2006_2024_wdepth.csv" # hidden file for inundation data
     }
 
     file = data_to_filename.get(

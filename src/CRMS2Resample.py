@@ -163,6 +163,8 @@ def resample():
                 file_name_list.extend([file_name2])
                 file_name_list
                 datasets = [CRMS_subset, CRMS_subset_SLR]
+            else:
+                datasets = [CRMS_subset]
 
         else:
             file_name_list = [file_name]

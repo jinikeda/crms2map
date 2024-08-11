@@ -4,36 +4,34 @@
 # This file is developed for monthly data analysis. However, it includes hourly and daily analysis capabilities.
 # Developed by the Center for Computation & Technology at Louisiana State University (LSU).
 # Developer: Jin Ikeda
-# Last modified Aug 8, 2024
-
-import numpy as np
-import pandas as pd
-import geopandas as gpd
+# Last modified Aug 10, 2024
 import os
-import glob
+
+# Import necessary modules
 from datetime import datetime, timedelta
 import argparse
+
 # stats
-from statsmodels.tsa.stattools import adfuller
-from scipy import stats
+
 # plot
-from matplotlib import pyplot as plt
 import matplotlib.dates as mp_dates
 import matplotlib.cm as cm
 import seaborn as sns
-from matplotlib.ticker import (AutoMinorLocator, MultipleLocator)
+from matplotlib.ticker import AutoMinorLocator, MultipleLocator
 import itertools
+
+from CRMS_general_functions import *
+
+start_time = time.time()
 
 global file_suffix, file_suffix2
 
-file_suffix=".csv"
+file_suffix = ".csv"
 file_suffix2 = ".xlsx"
 
 # Declare global variables
 start_date = None
 end_date = None
-
-
 
 # Make Output folder
 Workspace = "C:/Users/jikeda/Desktop/CRMS2Map/CRMS_devtest"
@@ -43,7 +41,7 @@ Inputspace = os.path.join(Workspace, "Input")  # Make Input folder
 # Set the list of CRMS stations to plot
 
 ### Manual input ###
-station_list = ["CRMS0002","CRMS0003"]
+station_list = ["CRMS0002", "CRMS0003"]
 
 ### Use txt file ###
 ### user turn on the following code to use the txt file
@@ -58,18 +56,22 @@ print("Current working directory: {0}".format(os.getcwd()))
 # Change the current working directory
 os.chdir(Workspace)
 
-Photospace = os.path.join(Workspace, 'Photo')
+Photospace = os.path.join(Workspace, "Photo")
+Outputspace = os.path.join(Workspace, "Output")
 # Output_space=os.path.join(Workspace,'bootstrap_Output')
 
 try:
-    os.mkdir(Photospace)
+    os.makedirs(Photospace, exist_ok=True)
+    os.makedirs(Outputspace, exist_ok=True)
 except:
     pass
 
 
 ### Functions ####################################################################################################
 # Make a nested datasets for continuous data
-def create_nested_datasets(file_name, file_name_o, file_suffix,MA_window, threshold1,Discrete = False):
+def create_nested_datasets(
+    file_name, file_name_o, file_suffix, MA_window, threshold1, Discrete=False
+):
     global start_date, end_date  # Refer to the global variables
     datasets = {}  # monthly average dataset
     MA_datasets = {}  # moving average dictionaly
@@ -77,9 +79,9 @@ def create_nested_datasets(file_name, file_name_o, file_suffix,MA_window, thresh
         file = file_n + file_suffix
         print(file)
         try:
-            datasets[name_o] = pd.read_csv(file, encoding='utf-8')
+            datasets[name_o] = pd.read_csv(file, encoding="utf-8")
         except UnicodeDecodeError:
-            print('Encoding error')
+            print("Encoding error")
             continue
 
         print(datasets[name_o].head(5))
@@ -89,45 +91,61 @@ def create_nested_datasets(file_name, file_name_o, file_suffix,MA_window, thresh
         datasets[name_o] = pd.DataFrame(datasets[name_o])
 
         # Delete columns where 'num_station' is lower than threshold1
-        row_index = datasets[name_o].loc[datasets[name_o]['num_station'] < threshold1].index.tolist()
+        row_index = (
+            datasets[name_o]
+            .loc[datasets[name_o]["num_station"] < threshold1]
+            .index.tolist()
+        )
         datasets[name_o] = datasets[name_o].drop(row_index)
 
         # Move datetime into index
         datasets[name_o].index = pd.to_datetime(datasets[name_o].Date)
 
         # Drop the columns that were used to create the index
-        datasets[name_o].drop(['Date'], axis=1, inplace=True)
-        datasets[name_o].drop(['num_station'], axis=1, inplace=True)
-        datasets[name_o] = datasets[name_o].iloc[2:,:]
+        datasets[name_o].drop(["Date"], axis=1, inplace=True)
+        datasets[name_o].drop(["num_station"], axis=1, inplace=True)
+        datasets[name_o] = datasets[name_o].iloc[2:, :]
 
         # Calculate moving average
         if Discrete == False:
-            MA_datasets[name_o]= datasets[name_o].rolling(window=MA_window, center=True).mean() # , min_periods=9min_period is a rough criterion
+            MA_datasets[name_o] = (
+                datasets[name_o].rolling(window=MA_window, center=True).mean()
+            )  # , min_periods=9min_period is a rough criterion
         else:
-            MA_datasets[name_o] = datasets[name_o].rolling(window=MA_window, center=True, min_periods=int(MA_window/2)).mean()  # , min_periods=9min_period is a rough criterion
+            MA_datasets[name_o] = (
+                datasets[name_o]
+                .rolling(window=MA_window, center=True, min_periods=int(MA_window / 2))
+                .mean()
+            )  # , min_periods=9min_period is a rough criterion
 
         # Filtering the data
-        datasets[name_o] = datasets[name_o].query('index >= @start_date and index <= @end_date')
-        MA_datasets[name_o] = MA_datasets[name_o].query('index >= @start_date and index <= @end_date')
+        datasets[name_o] = datasets[name_o].query(
+            "index >= @start_date and index <= @end_date"
+        )
+        MA_datasets[name_o] = MA_datasets[name_o].query(
+            "index >= @start_date and index <= @end_date"
+        )
 
     return datasets, MA_datasets
 
 
-def create_dataframe(file_name, date_column='Date'):
+def create_dataframe(file_name, date_column="Date"):
 
     # Use the appropriate pandas function to read the file
-    if '.xlsx' in file_name:
+    if ".xlsx" in file_name:
         try:
             df = pd.read_excel(file_name)
         except UnicodeDecodeError:
-            print('encoding error')            # CRMS = pd.read_csv(file, encoding='utf-8')
-    elif '.csv' in file_name:
+            print("encoding error")  # CRMS = pd.read_csv(file, encoding='utf-8')
+    elif ".csv" in file_name:
         try:
             df = pd.read_csv(file_name)
         except UnicodeDecodeError:
-            print('encoding error')            # CRMS = pd.read_csv(file, encoding='utf-8')
+            print("encoding error")  # CRMS = pd.read_csv(file, encoding='utf-8')
     else:
-        raise ValueError("Unsupported file type. The file must be a .xlsx or .csv file.")
+        raise ValueError(
+            "Unsupported file type. The file must be a .xlsx or .csv file."
+        )
 
     # Convert the DataFrame to the correct format
     df = pd.DataFrame(df)
@@ -143,27 +161,34 @@ def create_dataframe(file_name, date_column='Date'):
 
     return df
 
-def sub_dataframe_gen(sub_name,file_name):
-    sub_datasets = {} # monthly average dataset
 
-    for file, name_o in zip(sub_name,file_name):
+def sub_dataframe_gen(sub_name, file_name):
+    sub_datasets = {}  # monthly average dataset
+
+    for file, name_o in zip(sub_name, file_name):
         print(file)
-        sub_datasets[name_o] = create_dataframe(file, 'Date')
+        sub_datasets[name_o] = create_dataframe(file, "Date")
 
     return sub_datasets
 
 
-
-#Plot CRMS data
-def plot_CRMS(MA_datasets, MA_datasets_discrete, file_name_o, plot_period, plot_space, plot_range=None,
-              station=None):
+# Plot CRMS data
+def plot_CRMS(
+    datasets_continous,
+    datasets_discrete,
+    file_name_o,
+    plot_period,
+    plot_space,
+    plot_range=None,
+    station=None,
+):
     """
     General function to plot water level, hydroperiod, inundation depth, salinity, and other environmental data.
 
     Parameters:
     - datasets: dict of datasets
-    - MA_datasets: dict containing main datasets (water level, salinity, etc.)
-    - MA_datasets_discrete: dict containing discrete datasets (for pore water, etc.)
+    - datasets_continous: dict containing main datasets (water level, salinity, etc.)
+    - datasets_discrete: dict containing discrete datasets (for pore water, etc.)
     - file_name_o: str, the type of plot ("WL", "Salinity", "W_HP", etc.)
     - plot_period: list or tuple, the period over which to plot the data
     - plot_range: list or tuple, the y-axis range for the plot
@@ -177,56 +202,144 @@ def plot_CRMS(MA_datasets, MA_datasets_discrete, file_name_o, plot_period, plot_
     if plot_range is None:
         if station:
             if isinstance(station, list):
-                min_value = round(MA_datasets[file_name_o][station].min().min() - 0.05,1)
-                max_value = round(MA_datasets[file_name_o][station].max().max() + 0.05,1)
+                min_value = round(
+                    datasets_continous[file_name_o][station].min().min() - 0.05, 1
+                )
+                max_value = round(
+                    datasets_continous[file_name_o][station].max().max() + 0.05, 1
+                )
             else:
-                min_value = round(MA_datasets[file_name_o][station].min() - 0.05,1)
-                max_value = round(MA_datasets[file_name_o][station].max() + 0.05,1)
+                min_value = round(
+                    datasets_continous[file_name_o][station].min() - 0.05, 1
+                )
+                max_value = round(
+                    datasets_continous[file_name_o][station].max() + 0.05, 1
+                )
         else:
             # Calculate the 10th percentile at each time step
-            quantiles_low = MA_datasets[file_name_o].quantile(q=0.25, axis=1)
-            quantiles_high = MA_datasets[file_name_o].quantile(q=0.75, axis=1)
+            quantiles_low = datasets_continous[file_name_o].quantile(q=0.25, axis=1)
+            quantiles_high = datasets_continous[file_name_o].quantile(q=0.75, axis=1)
 
             # Take the minimum and maximum of these quantiles across all time steps
-            min_value = round(quantiles_low.min() - 0.05,1)
-            max_value = round(quantiles_high.max() + 0.05,1)
+            min_value = round(quantiles_low.min() - 0.05, 1)
+            max_value = round(quantiles_high.max() + 0.05, 1)
 
-        if np.max(max_value)>1:
-            plot_range = [np.floor(min_value), np.ceil(max_value)]  # Provide plot_range as a list
+        if np.max(max_value) > 1:
+            plot_range = [
+                np.floor(min_value),
+                np.ceil(max_value),
+            ]  # Provide plot_range as a list
         else:
             plot_range = [min_value, max_value]  # Provide plot_range as a list
-        print('Min_range:', plot_range[0], 'Max_range:', plot_range[1])
+        print("Min_range:", plot_range[0], "Max_range:", plot_range[1])
 
     fig, ax = plt.subplots(figsize=(6, 3))
-    ax.set_xlabel('Year')
+    ax.set_xlabel("Year")
 
     ####################################################################################################################
     # Automatically set up the x-axis for date formatting
     ####################################################################################################################
     # Convert plot_period from strings to datetime objects
-    start_date = datetime.strptime(plot_period[0], '%Y-%m-%d')
-    end_date = datetime.strptime(plot_period[1], '%Y-%m-%d')
+    start_date = datetime.strptime(plot_period[0], "%Y-%m-%d")
+    end_date = datetime.strptime(plot_period[1], "%Y-%m-%d")
 
-    data_length_in_years = (end_date - start_date).days / 365.25     # Calculate data length in years
+    # Calculate data length
+    if Data_type == "H":
+        data_length = (end_date - start_date).total_seconds() / (
+            3600 * 24
+        )  # Data length in days
+    elif Data_type == "D":
+        data_length = (end_date - start_date).days  # Data length in days
+    else:
+        data_length = (end_date - start_date).days / 365.25  # Data length in years
 
     # Set x-axis date formatter based on the data length
-    assert data_length_in_years > 0, "Invalid data period. The end date must be after the start date."
+    assert (
+        data_length > 0
+    ), "Invalid data period. The end date must be after the start date."
 
-    ax.set_xlabel('Year')
+    print(f"Data Length: {data_length}")
 
-    # Set x-axis date formatter and locator based on the data length
-    if data_length_in_years <= 1.5:
-        ax.xaxis.set_major_formatter(mp_dates.DateFormatter('%Y-%m'))
-        plot_xspace = mp_dates.MonthLocator(interval=3)  # Every 3 months
-    elif data_length_in_years > 1.5 and data_length_in_years <= 3:
-        ax.xaxis.set_major_formatter(mp_dates.DateFormatter('%Y-%m'))
-        plot_xspace = mp_dates.MonthLocator(interval=6)  # Every 6 months
+    # Set x-axis date formatter and locator based on the data length and type
+    if Data_type == "H":
+        if data_length <= 0.25:
+            ax.xaxis.set_major_formatter(mp_dates.DateFormatter("%Y-%m-%d-%H"))
+            ax.xaxis.set_major_locator(
+                mp_dates.HourLocator(interval=2)
+            )  # Every 2 hours
+        elif data_length <= 1:
+            ax.xaxis.set_major_formatter(mp_dates.DateFormatter("%Y-%m-%d-%H"))
+            ax.xaxis.set_major_locator(
+                mp_dates.HourLocator(interval=6)
+            )  # Every 6 hours
+        elif data_length <= 3:
+            ax.xaxis.set_major_formatter(mp_dates.DateFormatter("%Y-%m-%d"))
+            ax.xaxis.set_major_locator(mp_dates.DayLocator(interval=1))  # Every day
+        elif data_length <= 7:
+            ax.xaxis.set_major_formatter(mp_dates.DateFormatter("%Y-%m-%d"))
+            ax.xaxis.set_major_locator(mp_dates.DayLocator(interval=2))  # Every 2 days
+        elif data_length <= 31:
+            ax.xaxis.set_major_formatter(mp_dates.DateFormatter("%Y-%m-%d"))
+            ax.xaxis.set_major_locator(mp_dates.DayLocator(interval=7))  # Every 7 days
+        elif data_length <= 120:
+            ax.xaxis.set_major_formatter(mp_dates.DateFormatter("%Y-%m"))
+            ax.xaxis.set_major_locator(mp_dates.MonthLocator(interval=1))  # Every month
+        elif data_length <= 367:
+            ax.xaxis.set_major_formatter(mp_dates.DateFormatter("%Y-%m"))
+            ax.xaxis.set_major_locator(
+                mp_dates.MonthLocator(interval=3)
+            )  # Every 3 months
+        else:
+            ax.xaxis.set_major_formatter(mp_dates.DateFormatter("%Y"))
+            ax.xaxis.set_major_locator(
+                mp_dates.YearLocator(base=max(1, round(data_length / (365.25 * 4))))
+            )
+    elif Data_type == "D":
+        if data_length <= 7:
+            ax.xaxis.set_major_formatter(mp_dates.DateFormatter("%Y-%m-%d"))
+            ax.xaxis.set_major_locator(mp_dates.DayLocator(interval=2))  # Every 2 days
+        elif data_length <= 31:
+            ax.xaxis.set_major_formatter(mp_dates.DateFormatter("%Y-%m-%d"))
+            ax.xaxis.set_major_locator(mp_dates.DayLocator(interval=7))  # Every 7 days
+        elif data_length <= 120:
+            ax.xaxis.set_major_formatter(mp_dates.DateFormatter("%Y-%m"))
+            ax.xaxis.set_major_locator(mp_dates.MonthLocator(interval=1))  # Every month
+        elif data_length <= 367:
+            print("check the selection month")
+            ax.xaxis.set_major_formatter(mp_dates.DateFormatter("%Y-%m"))
+            ax.xaxis.set_major_locator(
+                mp_dates.MonthLocator(interval=3)
+            )  # Every 3 months
+        else:
+            print("check the selection")
+            ax.xaxis.set_major_formatter(mp_dates.DateFormatter("%Y"))
+            ax.xaxis.set_major_locator(
+                mp_dates.YearLocator(base=max(1, round(data_length / (365.25 * 4))))
+            )
+    else:  # Monthly or yearly data
+        if data_length <= 1.5:
+            ax.xaxis.set_major_formatter(mp_dates.DateFormatter("%Y-%m"))
+            ax.xaxis.set_major_locator(
+                mp_dates.MonthLocator(interval=3)
+            )  # Every 3 months
+        elif data_length <= 3:
+            ax.xaxis.set_major_formatter(mp_dates.DateFormatter("%Y-%m"))
+            ax.xaxis.set_major_locator(
+                mp_dates.MonthLocator(interval=6)
+            )  # Every 6 months
+        else:
+            ax.xaxis.set_major_formatter(mp_dates.DateFormatter("%Y"))
+            ax.xaxis.set_major_locator(
+                mp_dates.YearLocator(base=max(1, round(data_length / 4)))
+            )
+
+    if Data_type == "H" or Data_type == "D":
+        ax.set_xlabel("Date")
+        # Rotate the x-axis labels for better readability
+        if data_length <= 31:
+            plt.xticks(rotation=45, ha="right")
     else:
-        ax.xaxis.set_major_formatter(mp_dates.DateFormatter('%Y'))
-        plot_xspace = mp_dates.YearLocator(base=max(1, round(data_length_in_years / 4)))  # Ensure at least 1 year
-
-    # Set x-axis ticks using the appropriate locator
-    ax.xaxis.set_major_locator(plot_xspace)
+        ax.set_ylabel("Year")
 
     ####################################################################################################################
     # handle specified stations
@@ -235,135 +348,342 @@ def plot_CRMS(MA_datasets, MA_datasets_discrete, file_name_o, plot_period, plot_
     if station:
         if isinstance(station, list):
             title_suffix = f" at {len(station)} stations"
-            if len(station)>= 5:
+            if len(station) >= 5:
                 title_out = "multi_stations"
             else:
-                title_out = "_".join([s.replace('CRMS', '') for s in station])
+                title_out = "_".join([s.replace("CRMS", "") for s in station])
         else:
             title_suffix = f" at {station.replace('CRMS', '')}"
-            title_out = station.replace('-', ' ')
+            title_out = station.replace("-", " ")
     else:
         title_suffix = " (Median Across Stations)"
         title_out = "median"
 
     if file_name_o == "WL":
-        ax.set_ylabel(u'Water level [NAVD88,m]')
-        output = os.path.join(Photospace, f'Water_level_{title_out}.png')
+        ax.set_ylabel("Water level [NAVD88,m]")
+        output = os.path.join(Photospace, f"Water_level_{title_out}.png")
         if station:
             if isinstance(station, list):
                 for st in station:
-                    ax.plot(MA_datasets["WL"].index, MA_datasets["WL"][st], label=f'{st}', linewidth=1)
+                    ax.plot(
+                        datasets_continous["WL"].index,
+                        datasets_continous["WL"][st],
+                        label=f"{st}",
+                        linewidth=1,
+                    )
             else:
-                ax.plot(MA_datasets["WL"].index, MA_datasets["WL"][station], 'k--', linewidth=1)
+                ax.plot(
+                    datasets_continous["WL"].index,
+                    datasets_continous["WL"][station],
+                    "k--",
+                    linewidth=1,
+                )
         else:
-            ax.plot(MA_datasets["WL"].index, MA_datasets["WL"].median(axis=1, skipna=True), 'k--', linewidth=1)
-            plt.fill_between(MA_datasets["WL"].index, MA_datasets["WL"].quantile(q=0.25, axis=1),
-                             MA_datasets["WL"].quantile(q=0.75, axis=1), alpha=0.9, linewidth=0, color='grey')
+            ax.plot(
+                datasets_continous["WL"].index,
+                datasets_continous["WL"].median(axis=1, skipna=True),
+                "k--",
+                linewidth=1,
+            )
+            plt.fill_between(
+                datasets_continous["WL"].index,
+                datasets_continous["WL"].quantile(q=0.25, axis=1),
+                datasets_continous["WL"].quantile(q=0.75, axis=1),
+                alpha=0.9,
+                linewidth=0,
+                color="grey",
+            )
+
+    elif file_name_o == "Temp":
+        ax.set_ylabel("Temperature [°C]")
+        output = os.path.join(Photospace, f"Temperature_{title_out}.png")
+        if station:
+            if isinstance(station, list):
+                for st in station:
+                    ax.plot(
+                        datasets_continous["Temp"].index,
+                        datasets_continous["Temp"][st],
+                        label=f"{st}",
+                        linewidth=1,
+                    )
+            else:
+                ax.plot(
+                    datasets_continous["Temp"].index,
+                    datasets_continous["Temp"][station],
+                    "k--",
+                    linewidth=1,
+                )
+        else:
+            ax.plot(
+                datasets_continous["Temp"].index,
+                datasets_continous["Temp"].median(axis=1, skipna=True),
+                "k--",
+                linewidth=1,
+            )
+            plt.fill_between(
+                datasets_continous["Temp"].index,
+                datasets_continous["Temp"].quantile(q=0.25, axis=1),
+                datasets_continous["Temp"].quantile(q=0.75, axis=1),
+                alpha=0.9,
+                linewidth=0,
+                color="grey",
+            )
 
     elif file_name_o == "W_HP":
-        ax.set_ylabel(u'Hydroperiod')
-        output = os.path.join(Photospace, f'Hydro_period_{title_out}.png')
+        ax.set_ylabel("Hydroperiod")
+        output = os.path.join(Photospace, f"Hydro_period_{title_out}.png")
         if station:
             if isinstance(station, list):
                 for st in station:
-                    ax.plot(MA_datasets["W_HP"].index, MA_datasets["W_HP"][st], label=f'{st}', linewidth=1)
+                    ax.plot(
+                        datasets_continous["W_HP"].index,
+                        datasets_continous["W_HP"][st],
+                        label=f"{st}",
+                        linewidth=1,
+                    )
             else:
-                ax.plot(MA_datasets["W_HP"].index, MA_datasets["W_HP"][station], 'k--', linewidth=1)
+                ax.plot(
+                    datasets_continous["W_HP"].index,
+                    datasets_continous["W_HP"][station],
+                    "k--",
+                    linewidth=1,
+                )
         else:
-            ax.plot(MA_datasets["W_HP"].index, MA_datasets["W_HP"].median(axis=1, skipna=True), 'k--', linewidth=1)
-            plt.fill_between(MA_datasets["W_HP"].index, MA_datasets["W_HP"].quantile(q=0.25, axis=1),
-                             MA_datasets["W_HP"].quantile(q=0.75, axis=1), alpha=0.9, linewidth=0, color='grey')
+            ax.plot(
+                datasets_continous["W_HP"].index,
+                datasets_continous["W_HP"].median(axis=1, skipna=True),
+                "k--",
+                linewidth=1,
+            )
+            plt.fill_between(
+                datasets_continous["W_HP"].index,
+                datasets_continous["W_HP"].quantile(q=0.25, axis=1),
+                datasets_continous["W_HP"].quantile(q=0.75, axis=1),
+                alpha=0.9,
+                linewidth=0,
+                color="grey",
+            )
 
     elif file_name_o == "W_depth":
-        ax.set_ylabel(u'Inundation depth [m]')
-        output = os.path.join(Photospace, f'Water_depth_{title_out}.png')
+        ax.set_ylabel("Inundation depth [m]")
+        output = os.path.join(Photospace, f"Water_depth_{title_out}.png")
         if station:
             if isinstance(station, list):
                 for st in station:
-                    ax.plot(MA_datasets["W_depth"].index, MA_datasets["W_depth"][st], label=f'{st}', linewidth=1)
+                    ax.plot(
+                        datasets_continous["W_depth"].index,
+                        datasets_continous["W_depth"][st],
+                        label=f"{st}",
+                        linewidth=1,
+                    )
             else:
-                ax.plot(MA_datasets["W_depth"].index, MA_datasets["W_depth"][station], 'k--', linewidth=1)
+                ax.plot(
+                    datasets_continous["W_depth"].index,
+                    datasets_continous["W_depth"][station],
+                    "k--",
+                    linewidth=1,
+                )
         else:
-            ax.plot(MA_datasets["W_depth"].index, MA_datasets["W_depth"].median(axis=1, skipna=True), 'k--',
-                    linewidth=1)
-            plt.fill_between(MA_datasets["W_depth"].index, MA_datasets["W_depth"].quantile(q=0.25, axis=1),
-                             MA_datasets["W_depth"].quantile(q=0.75, axis=1), alpha=0.9, linewidth=0, color='grey')
+            ax.plot(
+                datasets_continous["W_depth"].index,
+                datasets_continous["W_depth"].median(axis=1, skipna=True),
+                "k--",
+                linewidth=1,
+            )
+            plt.fill_between(
+                datasets_continous["W_depth"].index,
+                datasets_continous["W_depth"].quantile(q=0.25, axis=1),
+                datasets_continous["W_depth"].quantile(q=0.75, axis=1),
+                alpha=0.9,
+                linewidth=0,
+                color="grey",
+            )
 
     elif file_name_o == "Salinity":
-        ax.set_ylabel(u'Salinity [ppt]')
-        output = os.path.join(Photospace, f'Salinity_{title_out}.png')
+        ax.set_ylabel("Salinity [ppt]")
+        output = os.path.join(Photospace, f"Salinity_{title_out}.png")
         if station:
             if isinstance(station, list):
                 for st in station:
-                    ax.plot(MA_datasets["Salinity"].index, MA_datasets["Salinity"][st], label=f'{st}', linewidth=1)
-                    ax.plot(MA_datasets_discrete["Pore_10"].index, MA_datasets_discrete["Pore_10"][st], 'g--',
-                            linewidth=1)
-                    ax.plot(MA_datasets_discrete["Pore_30"].index, MA_datasets_discrete["Pore_30"][st], 'r--',
-                            linewidth=1)
+                    ax.plot(
+                        datasets_continous["Salinity"].index,
+                        datasets_continous["Salinity"][st],
+                        label=f"{st}",
+                        linewidth=1,
+                    )
+                    if Data_type == "M" or Data_type == "Y":
+                        ax.plot(
+                            datasets_discrete["Pore_10"].index,
+                            datasets_discrete["Pore_10"][st],
+                            "g--",
+                            linewidth=1,
+                        )
+                        ax.plot(
+                            datasets_discrete["Pore_30"].index,
+                            datasets_discrete["Pore_30"][st],
+                            "r--",
+                            linewidth=1,
+                        )
             else:
-                ax.plot(MA_datasets["Salinity"].index, MA_datasets["Salinity"][station], 'k--', linewidth=1)
-                ax.plot(MA_datasets_discrete["Pore_10"].index, MA_datasets_discrete["Pore_10"][station], 'g--',
-                        linewidth=1)
-                ax.plot(MA_datasets_discrete["Pore_30"].index, MA_datasets_discrete["Pore_30"][station], 'r--',
-                        linewidth=1)
+                ax.plot(
+                    datasets_continous["Salinity"].index,
+                    datasets_continous["Salinity"][station],
+                    "k--",
+                    linewidth=1,
+                )
+                if Data_type == "M" or Data_type == "Y":
+                    ax.plot(
+                        datasets_discrete["Pore_10"].index,
+                        datasets_discrete["Pore_10"][station],
+                        "g--",
+                        linewidth=1,
+                    )
+                    ax.plot(
+                        datasets_discrete["Pore_30"].index,
+                        datasets_discrete["Pore_30"][station],
+                        "r--",
+                        linewidth=1,
+                    )
         else:
-            ax.plot(MA_datasets["Salinity"].index, MA_datasets["Salinity"].median(axis=1, skipna=True), 'k--',
-                    linewidth=1)
-            ax.plot(MA_datasets_discrete["Pore_10"].index, MA_datasets_discrete["Pore_10"].median(axis=1, skipna=True),
-                    'g--', linewidth=1)
-            ax.plot(MA_datasets_discrete["Pore_30"].index, MA_datasets_discrete["Pore_30"].median(axis=1, skipna=True),
-                    'r--', linewidth=1)
+            ax.plot(
+                datasets_continous["Salinity"].index,
+                datasets_continous["Salinity"].median(axis=1, skipna=True),
+                "k--",
+                linewidth=1,
+            )
+            if Data_type == "M" or Data_type == "Y":
+                ax.plot(
+                    datasets_discrete["Pore_10"].index,
+                    datasets_discrete["Pore_10"].median(axis=1, skipna=True),
+                    "g--",
+                    linewidth=1,
+                )
+                ax.plot(
+                    datasets_discrete["Pore_30"].index,
+                    datasets_discrete["Pore_30"].median(axis=1, skipna=True),
+                    "r--",
+                    linewidth=1,
+                )
 
-            plt.fill_between(MA_datasets_discrete["Pore_30"].index,
-                             MA_datasets_discrete["Pore_30"].quantile(q=0.25, axis=1),
-                             MA_datasets_discrete["Pore_30"].quantile(q=0.75, axis=1), alpha=0.5, linewidth=0,
-                             color='r')
-            plt.fill_between(MA_datasets_discrete["Pore_10"].index,
-                             MA_datasets_discrete["Pore_10"].quantile(q=0.25, axis=1),
-                             MA_datasets_discrete["Pore_10"].quantile(q=0.75, axis=1), alpha=0.5, linewidth=0,
-                             color='g')
-            plt.fill_between(MA_datasets["Salinity"].index, MA_datasets["Salinity"].quantile(q=0.25, axis=1),
-                             MA_datasets["Salinity"].quantile(q=0.75, axis=1), alpha=0.9, linewidth=0, color='grey')
+                plt.fill_between(
+                    datasets_discrete["Pore_30"].index,
+                    datasets_discrete["Pore_30"].quantile(q=0.25, axis=1),
+                    datasets_discrete["Pore_30"].quantile(q=0.75, axis=1),
+                    alpha=0.5,
+                    linewidth=0,
+                    color="r",
+                )
+                plt.fill_between(
+                    datasets_discrete["Pore_10"].index,
+                    datasets_discrete["Pore_10"].quantile(q=0.25, axis=1),
+                    datasets_discrete["Pore_10"].quantile(q=0.75, axis=1),
+                    alpha=0.5,
+                    linewidth=0,
+                    color="g",
+                )
+            plt.fill_between(
+                datasets_continous["Salinity"].index,
+                datasets_continous["Salinity"].quantile(q=0.25, axis=1),
+                datasets_continous["Salinity"].quantile(q=0.75, axis=1),
+                alpha=0.9,
+                linewidth=0,
+                color="grey",
+            )
 
-        ax.legend(['Pore d30', 'Pore d10', 'Surface'])
+        if Data_type == "M" or Data_type == "Y":
+            ax.legend(["Pore d30", "Pore d10", "Surface"])
+        else:
+            ax.legend(["Surface"])
 
     else:
-        raise ValueError("Unsupported file name. The file name must be one of 'WL', 'W_HP', 'W_depth', or 'Salinity'.")
+        raise ValueError(
+            "Unsupported file name. The file name must be one of 'WL', 'W_HP', 'W_depth', or 'Salinity'."
+        )
 
     if station:
-        plt.text(0.05, 0.95, f"{file_name_o} {title_suffix}", horizontalalignment='left', verticalalignment='top',
-                 transform=ax.transAxes)
+        plt.text(
+            0.05,
+            0.95,
+            f"{file_name_o} {title_suffix}",
+            horizontalalignment="left",
+            verticalalignment="top",
+            transform=ax.transAxes,
+        )
 
     plt.xlim(mp_dates.date2num(plot_period))
     plt.ylim(plot_range)
-    if (plot_range[1]-plot_range[0])/4 >= plot_space:
-        plot_space = round((plot_range[1]-plot_range[0])/4,2)
+    if (plot_range[1] - plot_range[0]) / 4 >= plot_space:
+        plot_space = round((plot_range[1] - plot_range[0]) / 4, 2)
     major_ticks = np.arange(plot_range[0], plot_range[1] + 0.01, plot_space)
     ax.set_yticks(major_ticks)
-    plt.grid(color='k', linestyle='--', linewidth=0.1)
+    plt.grid(color="k", linestyle="--", linewidth=0.1)
     if isinstance(station, list):
         ax.legend()
-    plt.savefig(output, dpi=600, bbox_inches='tight')
+    plt.savefig(output, dpi=600, bbox_inches="tight")
     plt.show()
     plt.close()
 
 
-def data_analysis ():
+def data_analysis():
     ########################################################################
-    print ('Data_anaysis')
+    print("Data_anaysis")
     ######################################################################
 
     # Main function to perform data analysis and plotting.
     # Allows users to specify state and date as command line arguments.
-    global start_date, end_date,station_list  # Refer to the global variables
-
+    global start_date, end_date, station_list, Data_type  # Refer to the global variables
 
     # Set up argument parser
-    parser = argparse.ArgumentParser(description="CRMS2Plot: Data analysis and plotting tool")
-    parser.add_argument("--sdate", type=str, default="2008-01-01", help="State date for the data analysis (format: YYYY-MM-DD)")
-    parser.add_argument("--edate", type=str, default="2024-12-31", help="End date for the data analysis (format: YYYY-MM-DD)")
-    parser.add_argument("--plotdata", type=str, default="MA", help="Plot original data (org) or moving average data (MA)")
-    parser.add_argument("--staionfile", type=str, default=None, help="Path to station list file <stationlist.txt> (format: CRMSxxxx)")
+    parser = argparse.ArgumentParser(
+        description="CRMS2Plot: Data analysis and plotting tool"
+    )
+    parser.add_argument(
+        "--sdate",
+        type=str,
+        default="2008-01-01",
+        help="State date for the data analysis (format: YYYY-MM-DD)",
+    )
+    parser.add_argument(
+        "--edate",
+        type=str,
+        default="2024-12-31",
+        help="End date for the data analysis (format: YYYY-MM-DD)",
+    )
+
+    parser.add_argument(
+        "--staionfile",
+        type=str,
+        default=None,
+        help="Path to station list file <station_list.txt> (format: CRMSxxxx)",
+    )
+
+    parser.add_argument(
+        "--data_type",
+        type=str,
+        default="M",
+        help="Data type: houly(H), daily(D), monthly(M), and yearly(Y)",
+    )
+
+    parser.add_argument(
+        "--save",
+        action="store_true",
+        default=True,
+        help="Save as a single (bundled) dataset and MA_datasets. This is time-consuming when the user uses high spatial datasets.",
+    )
+
+    parser.add_argument(
+        "--plotdata",
+        type=str,
+        default="MA",
+        help="Plot original data (org) or moving average data (MA)",
+    )
+
+    parser.add_argument(
+        "--specify_MA",
+        type=int,
+        default=None,
+        help="[Optional] The user can specify a central moving average window size in days. [Default] = yearly averaged",
+    )
 
     # Parse the arguments
     args = parser.parse_args()
@@ -371,30 +691,41 @@ def data_analysis ():
     # Extract the parsed arguments
     start_date = args.sdate
     end_date = args.edate
-    plot_data = args.plotdata
     stationFile = args.staionfile
+    Data_type = args.data_type
+    Save_Flag = args.save
+    plot_data = args.plotdata
+    Specified_MA = args.specify_MA
 
     # Here you can use the `state` and `date` variables in your data analysis logic
     print(f"Performing analysis for between {start_date} - {end_date}")
     # The target working directory
 
     ### Parameters ###########################################################
-    threshold1 = 200 # Delete columns where 'num_station' is lower than the threshold for continuous data
-    threshold2 = int(threshold1/2) # Delete columns where 'num_station' is lower than the threshold for discrete data
+    threshold1 = 200  # Delete columns where 'num_station' is lower than the threshold for continuous data
+    threshold2 = int(
+        threshold1 / 2
+    )  # Delete columns where 'num_station' is lower than the threshold for discrete data
 
-    end_date_datetime = datetime.strptime(end_date, '%Y-%m-%d') # Convert the end_date string to a datetime object
-    end_date_datetime = end_date_datetime + timedelta(days=1) # Add one day to the end_date
-    end_date_plus_one = end_date_datetime.strftime('%Y-%m-%d') # Convert the datetime object back to a string
+    end_date_datetime = datetime.strptime(
+        end_date, "%Y-%m-%d"
+    )  # Convert the end_date string to a datetime object
+    end_date_datetime = end_date_datetime + timedelta(
+        days=1
+    )  # Add one day to the end_date
+    end_date_plus_one = end_date_datetime.strftime(
+        "%Y-%m-%d"
+    )  # Convert the datetime object back to a string
 
     # Update the plot_period
-    plot_period = [start_date, end_date_plus_one] # 'yyyy-mm-dd'
-    print('plot_period',plot_period)
+    plot_period = [start_date, end_date_plus_one]  # 'yyyy-mm-dd'
+    print("plot_period", plot_period)
 
-    Sub_basinspace = os.path.join(Workspace, 'Sub_basin') # Make Sub_basin folder
-    Sub_marshspace = os.path.join(Workspace, 'Sub_marsh') # Make Sub_marsh folder
+    Sub_basinspace = os.path.join(Workspace, "Sub_basin")  # Make Sub_basin folder
+    Sub_marshspace = os.path.join(Workspace, "Sub_marsh")  # Make Sub_marsh folder
 
     try:
-        #os.makedirs(Photpspace, exist_ok=True)
+        # os.makedirs(Photpspace, exist_ok=True)
         os.makedirs(Sub_basinspace, exist_ok=True)
         os.makedirs(Sub_marshspace, exist_ok=True)
 
@@ -405,122 +736,207 @@ def data_analysis ():
     # color_palette for plots
     #############################################
     # Create ramdom colors
-    #p.random.seed(42)  # Set the seed for reproducibility
+    # p.random.seed(42)  # Set the seed for reproducibility
     color_palette = []
 
-    color_palette.append([153/255, 0, 0]) # Pontchartrain
-    color_palette.append([255/255, 200/255, 0/255]) # Breton Sound
-    color_palette.append([255/255, 153/255, 0/255]) # Mississippi River Delta
-    color_palette.append([204/255, 210/255, 0/255]) # Barataria
-    color_palette.append([0/255, 128/255, 0/255]) # Terrebonne
-    color_palette.append([0/255, 0/255, 255/255]) # Atchafalaya
-    color_palette.append([153/255, 153/255, 255/255]) # Teche/Vermilion
-    color_palette.append([204/255, 102/255, 153/255]) # Mermentau
-    color_palette.append([255/255, 0, 255/255]) # Calcasieu/Sabine
+    color_palette.append([153 / 255, 0, 0])  # Pontchartrain
+    color_palette.append([255 / 255, 200 / 255, 0 / 255])  # Breton Sound
+    color_palette.append([255 / 255, 153 / 255, 0 / 255])  # Mississippi River Delta
+    color_palette.append([204 / 255, 210 / 255, 0 / 255])  # Barataria
+    color_palette.append([0 / 255, 128 / 255, 0 / 255])  # Terrebonne
+    color_palette.append([0 / 255, 0 / 255, 255 / 255])  # Atchafalaya
+    color_palette.append([153 / 255, 153 / 255, 255 / 255])  # Teche/Vermilion
+    color_palette.append([204 / 255, 102 / 255, 153 / 255])  # Mermentau
+    color_palette.append([255 / 255, 0, 255 / 255])  # Calcasieu/Sabine
 
     color_palette_vegetation = []
-    #print(color_palette)
-    color_palette_vegetation.append([230/255, 230/255, 0]) # Brackish
-    color_palette_vegetation.append([115/255, 255/255, 223/255]) # Freshwater
-    color_palette_vegetation.append([223/255, 115/255, 255/255]) # Intermediate
-    color_palette_vegetation.append([255/255, 85/255, 0/255]) # Saline
-    color_palette_vegetation.append([204/255, 204/255, 204/255]) # Swamp
+    # print(color_palette)
+    color_palette_vegetation.append([230 / 255, 230 / 255, 0])  # Brackish
+    color_palette_vegetation.append([115 / 255, 255 / 255, 223 / 255])  # Freshwater
+    color_palette_vegetation.append([223 / 255, 115 / 255, 255 / 255])  # Intermediate
+    color_palette_vegetation.append([255 / 255, 85 / 255, 0 / 255])  # Saline
+    color_palette_vegetation.append([204 / 255, 204 / 255, 204 / 255])  # Swamp
 
     ### Step 2 ###########################################################
-    print ('Step 2: Read input data ')
+    print("Step 2: Read input data ")
     ######################################################################
 
     ### 2.1 Read CRMS files ###
 
-
     ### Open continuous files
-    file_name1="CRMS_Water_Temp_2006_2024_Mdata"
-    file_name2="CRMS_Surface_salinity_2006_2024_Mdata"
-    file_name3="CRMS_Geoid99_to_Geoid12a_offsets_2006_2024_Mdata"
-    file_name4="CRMS_Water_Elevation_to_Marsh_2006_2024_wdepth_Mdata"
-    file_name5="CRMS_Water_Elevation_to_Marsh_2006_2024_wd_Mdata"
+    if Data_type == "H":
+        data_suffix = "Hdata"
+    elif Data_type == "D":
+        data_suffix = "Ddata"
+    elif Data_type == "M":
+        data_suffix = "Mdata"
+    elif Data_type == "Y":
+        data_suffix = "Ydata"
 
+    file_name1 = f"CRMS_Water_Temp_2006_2024_{data_suffix}"
+    file_name2 = f"CRMS_Surface_salinity_2006_2024_{data_suffix}"
+    file_name3 = f"CRMS_Geoid99_to_Geoid12a_offsets_2006_2024_{data_suffix}"
+    file_name4 = f"CRMS_Water_Elevation_to_Marsh_2006_2024_wdepth_{data_suffix}"
+    file_name5 = f"CRMS_Water_Elevation_to_Marsh_2006_2024_wd_{data_suffix}"
 
-    file_name=[file_name1,file_name2,file_name3,file_name4,file_name5]
-    file_name_o=["Temp","Salinity","WL","W_depth","W_HP"]
+    file_name = [file_name1, file_name2, file_name3, file_name4, file_name5]
+    file_name_o = ["Temp", "Salinity", "WL", "W_depth", "W_HP"]
 
     ### Open discrete files
-    file_name9="Pore_salinity_10_Mdata"
-    file_name10="Pore_salinity_30_Mdata"
-    file_name_discrete=[file_name9,file_name10]
-    file_name_o_discrete=["Pore_10","Pore_30"]
+    if Data_type == "M" or Data_type == "Y":
+        file_name9 = f"Pore_salinity_10_{data_suffix}"
+        file_name10 = f"Pore_salinity_30_{data_suffix}"
+        file_name_discrete = [file_name9, file_name10]
+        file_name_o_discrete = ["Pore_10", "Pore_30"]
 
     #######################################################################################################################
     # Set a moving window range for yearly analysis
-    # H: hourly, D: daily, M: monthly
+    date_style, MA_window, date_removal = get_date_info(file_name1)
+    if Specified_MA:
+        MA_window = Specified_MA  # days
+        print(f"Specified moving average window size: {MA_window} days")
+        if Data_type == "Y":
+            MA_window = MA_window // 365
+            print(f"Moving average window size: {MA_window} years")
+        elif Data_type == "M":
+            MA_window = MA_window // 30
+            print(f"Moving average window size: {MA_window} months")
 
-    if "Mdata" in file_name1:
-        MA_window = 12
-    elif "Ddata" in file_name1:
-        MA_window = 365
-    elif "Hdata" in file_name1:
-        MA_window = 8766
-    else:
-        raise ValueError("The file name must contain one of 'Mdata', 'Ddata' or 'Hdata'")
+        # Future consideration for hourly data: Jin Aug/10/2024
+
     #######################################################################################################################
 
     ### 2.2 Open climate file
 
     # Create a nested dataset for continuous data between 2008-2022
-    datasets, MA_datasets = create_nested_datasets(file_name, file_name_o, file_suffix,MA_window, threshold1)
+    datasets, MA_datasets = create_nested_datasets(
+        file_name, file_name_o, file_suffix, MA_window, threshold1
+    )
 
-    MA_datasets["WL"].to_excel('MA_timeseris_WL.xlsx') # Save the moving average dataset for analyzing a spatial mapping paper
+    print("\n\n Save datasets! Please patience! \n\n")
+    if Save_Flag:
+        with pd.ExcelWriter(os.path.join(Outputspace, "MA_timeseries.xlsx")) as writer:
+            for variable in file_name_o:
+                MA_datasets[variable].to_excel(writer, sheet_name=variable)
 
-    print('##########################################################################################################################\n')
-    print('W_HP datasets', datasets["W_HP"])
-    print('\n##########################################################################################################################\n')
+        with pd.ExcelWriter(os.path.join(Outputspace, "timeseries.xlsx")) as writer:
+            for variable in file_name_o:
+                datasets[variable].to_excel(writer, sheet_name=variable)
+
+    print(
+        "##########################################################################################################################\n"
+    )
+    print("W_HP datasets", datasets["W_HP"])
+    print(
+        "\n##########################################################################################################################\n"
+    )
 
     # Display stats
-    print("HP =",datasets["W_HP"].mean().mean(),", Depth= ",datasets["W_depth"].mean().mean())
+    print(
+        "HP =",
+        datasets["W_HP"].mean().mean(),
+        ", Depth= ",
+        datasets["W_depth"].mean().mean(),
+    )
 
     # Create a nested dataset for discrete data between 2008-2022
-    datasets_discrete, MA_datasets_discrete = create_nested_datasets(file_name_discrete, file_name_o_discrete, file_suffix,MA_window, threshold2, Discrete=True)
+    discrete_datasets = {}  # Initialize the discrete datasets for hourly and daily
+    MA_datasets_discrete = (
+        {}
+    )  # Initialize the moving average datasets for discrete data for hourly and daily
+    if Data_type == "M" or Data_type == "Y":
+        datasets_discrete, MA_datasets_discrete = create_nested_datasets(
+            file_name_discrete,
+            file_name_o_discrete,
+            file_suffix,
+            MA_window,
+            threshold2,
+            Discrete=True,
+        )
 
-    MA_datasets_discrete["Pore_10"].to_csv('Pore_10_MA.csv')
-    datasets_discrete["Pore_10"].to_csv('Pore_10.csv')
+        if Save_Flag:
+            with pd.ExcelWriter(
+                os.path.join(Outputspace, "MA_discrete_timeseries.xlsx")
+            ) as writer:
+                for variable in file_name_o_discrete:
+                    MA_datasets_discrete[variable].to_excel(writer, sheet_name=variable)
 
-    print('##########################################################################################################################\n')
-    print('W_HP datasets', datasets_discrete["Pore_10"].head(10))
-    print('\n##########################################################################################################################\n')
+            with pd.ExcelWriter(
+                os.path.join(Outputspace, "discrete_timeseries.xlsx")
+            ) as writer:
+                for variable in file_name_o_discrete:
+                    datasets_discrete[variable].to_excel(writer, sheet_name=variable)
 
+        print(
+            "##########################################################################################################################\n"
+        )
+        print("W_HP datasets", datasets_discrete["Pore_10"].head(10))
+        print(
+            "\n##########################################################################################################################\n"
+        )
 
     ### Step 3 ###########################################################
-    print('##########################################################################################################################\n')
-    print ('Step 3: Plot input data ')
-    print('\n##########################################################################################################################\n')
+    print(
+        "##########################################################################################################################\n"
+    )
+    print("Step 3: Plot input data ")
+    print(
+        "\n##########################################################################################################################\n"
+    )
     ######################################################################
 
     if plot_data == "MA":
         contious_datasets = MA_datasets.copy()
-        discrete_datasets = MA_datasets_discrete.copy()
+        if Data_type == "M" or Data_type == "Y":
+            discrete_datasets = MA_datasets_discrete.copy()
     else:
         contious_datasets = datasets.copy()
-        discrete_datasets = datasets_discrete.copy()
+        if Data_type == "M" or Data_type == "Y":
+            discrete_datasets = datasets_discrete.copy()
 
     if stationFile:
         # assert Inputspace, "The input space must be defined to use the station file."
         # stationFile = os.path.join(Inputspace, stationFile)
         path = os.getcwd()
-        assert os.path.exists(stationFile), f"The station file {stationFile} does not exist in {path}."
+        assert os.path.exists(
+            stationFile
+        ), f"The station file {stationFile} does not exist in {path}."
         station_list = np.loadtxt(stationFile, dtype=str).tolist()
-        print(f"Using station list from {stationFile}",station_list)
+        print(f"Using station list from {stationFile}", station_list)
 
-    #plot_CRMS(contious_datasets, discrete_datasets, "WL", plot_period, 0.1)
-    #plot_CRMS(contious_datasets, discrete_datasets, "Salinity", plot_period, 4)
-    #plot_CRMS(contious_datasets, discrete_datasets, "W_HP", plot_period, 0.2)
-    #plot_CRMS(contious_datasets, discrete_datasets, "W_depth", plot_period, 0.1)
-    plot_CRMS(contious_datasets, discrete_datasets, "WL", plot_period, 0.1,plot_range=None, station=station_list)
+    else:
+        station_list = None
 
-
-
-
-
-
+    # plot_CRMS(contious_datasets, discrete_datasets, "Temp", plot_period, 2, plot_range=None, station=station_list)
+    plot_CRMS(
+        contious_datasets,
+        discrete_datasets,
+        "WL",
+        plot_period,
+        0.1,
+        plot_range=None,
+        station=station_list,
+    )
+    plot_CRMS(
+        contious_datasets,
+        discrete_datasets,
+        "Salinity",
+        plot_period,
+        4,
+        plot_range=None,
+        station=station_list,
+    )
+    # plot_CRMS(contious_datasets, discrete_datasets, "W_HP", plot_period, 0.2,plot_range=None,station=station_list)
+    # plot_CRMS(contious_datasets, discrete_datasets, "W_depth", plot_period, 0.1,plot_range=None,station=station_list)
+    # plot_CRMS(
+    #     contious_datasets,
+    #     discrete_datasets,
+    #     "WL",
+    #     plot_period,
+    #     0.1,
+    #     plot_range=None,
+    #     station=station_list,
+    # )
 
     # ### Step 4 ###########################################################
     # print('##########################################################################################################################\n')
@@ -1265,6 +1681,16 @@ def data_analysis ():
     # # plt.savefig(output,dpi=600,bbox_inches='tight')
     # # plt.show()
     # # plt.close()
+
+    # Calculate the elapsed time
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+
+    # Print the elapsed time
+    print("Done")
+    print("Time to Compute: \t\t\t", elapsed_time, " seconds")
+    print("Job Finished ʕ •ᴥ•ʔ")
+
 
 if __name__ == "__main__":
     data_analysis()

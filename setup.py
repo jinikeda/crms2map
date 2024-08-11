@@ -48,10 +48,10 @@ setup(
     package_dir={"": "src"},
     install_requires=install_requires,
     entry_points={
-        'console_scripts': [
-            'CRMS2Map_continuous=CRMS_Continuous_Hydrographic2subsets:subsets',
-            'CRMS2Map_discrete=CRMS_Discrete_Hydrographic2subsets:subsets',
-            'CRMS2Map_resample=CRMS2Resample:resample',
+            'console_scripts': [
+                'CRMS2Map_continuous=CRMS_Continuous_Hydrographic2subsets:subsets',
+                'CRMS2Map_discrete=CRMS_Discrete_Hydrographic2subsets:subsets',
+                'CRMS2Map_resample=CRMS2Resample:resample',
 
         ],
     },
