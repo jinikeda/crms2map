@@ -28,7 +28,8 @@ Type: ***pip install -e .*** \
 * ***CRMS2Map_continuous*** for step. 1: CRMS_Continuous_Hydrographic2subsets.py
 * ***CRMS2Map_discrete*** for step.1: Create a subset data for salinity, water temperature, water level, and water level to marsh (hydroperiod and inundation depth) using CRMS_Discrete_Hydrographic2subsets.py
 * ***CRMS2Map_resample*** for step.2: Create hourly, daily, monthly, and yearly averaged datasets using CRMS2Resample.py
-CRMS2Plot: Data analysis and plotting tool after step.2
+* ***CRMS2Plot***: Data analysis and plotting tool after step.2\
+  This tool creates a single (bundled) dataset on the user's interested period, including moving averaged datasets and making plots.
 
     usage: **CRMS2Plot.py [-h] [--sdate SDATE] [--edate EDATE] [--staionfile STAIONFILE] [--data_type DATA_TYPE] [--save] [--plotdata PLOTDATA] [--specify_MA SPECIFY_MA]**
 
