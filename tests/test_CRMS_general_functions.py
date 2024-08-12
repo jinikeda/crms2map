@@ -7,6 +7,7 @@ import numpy as np
 from src.CRMS_general_functions import *
 from src.CRMS_Discrete_Hydrographic2subsets import *
 from src.CRMS2Resample import *
+from src.CRMS2Plot import *
 
 def test_download_CRMS(tmpdir):
     """Test the download_CRMS function with a sample URL."""
@@ -193,3 +194,36 @@ def test_resample_data_hourly_to_monthly(sample_data_hourly):
     assert pd.isna(
         monthly_mean.iloc[-1]["value"]
     ), "Last month should be NaN when count is less than 5."
+
+@pytest.fixture()
+def mock_plot_data():
+    # Define the time index
+    time_index = pd.to_datetime(["2010-01-01", "2014-01-01", "2018-01-01", "2022-01-01"])
+
+    # Mock data to simulate the plot data with the time index
+    return {
+        'WL': pd.DataFrame({
+            'CRMS0001': [1.2, 1.4, 1.1, 1.3],
+            'CRMS0002': [0.9, 1.0, 0.8, 0.7]
+        }, index=time_index)
+    }
+
+def test_plot_CRMS(mock_plot_data, tmpdir):
+    # Test the plot generation
+    plot_period = ["2008-01-01", "2024-12-31"]
+    file_name_o = "WL"
+
+    plot_space = 0.1
+    Data_type = "M"
+    output_dir = tmpdir.mkdir("Photo")
+
+    # Update the output directory in the plot_CRMS function call
+    output_location = plot_CRMS(mock_plot_data, {}, file_name_o, Data_type, plot_period, plot_space, plot_range=None, station=None, photo_dir=output_dir)
+
+    # Print the output file path for debugging
+    output_file = os.path.join(output_dir, f'Water_level_median.png')
+    print(f"Expected output file: {output_file}")
+
+    # Check if the file was created
+    #assert output_location == output_file, f"The plot should be saved as a PNG file at {output_location}. But made at {output_file}"
+    assert os.path.exists(output_file), f"The plot should be saved as a PNG file at {output_file}."

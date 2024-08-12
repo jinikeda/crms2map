@@ -181,25 +181,36 @@ def plot_CRMS(
     datasets_continous,
     datasets_discrete,
     file_name_o,
+    Data_type,
     plot_period,
     plot_space,
     plot_range=None,
     station=None,
+    photo_dir=Photospace,
 ):
     """
     General function to plot water level, hydroperiod, inundation depth, salinity, and other environmental data.
 
     Parameters:
-    - datasets: dict of datasets
-    - datasets_continous: dict containing main datasets (water level, salinity, etc.)
-    - datasets_discrete: dict containing discrete datasets (for pore water, etc.)
-    - file_name_o: str, the type of plot ("WL", "Salinity", "W_HP", etc.)
-    - plot_period: list or tuple, the period over which to plot the data
-    - plot_range: list or tuple, the y-axis range for the plot
-    - plot_space: float, the spacing of y-axis ticks. If the value is less than plot_range/4, automatically modify the value
-    - station: str or list, optional, the CRMS station(s) to plot data for. If None, plots the median across all stations.
+    - datasets_continous: dict
+        A dictionary containing the main continuous datasets (e.g., water level, salinity) indexed by station ID and date.
+    - datasets_discrete: dict
+        A dictionary containing discrete datasets (e.g., pore water salinity) indexed by station ID and date.
+    - file_name_o: str
+        The type of data to be plotted (e.g., "WL" for water level, "Salinity" for salinity).
+    - Data_type: str
+        The type of data resolution (e.g., "H" for hourly, "D" for daily, "M" for monthly, "Y" for yearly).
+    - plot_period: list or tuple
+        A list or tuple specifying the start and end dates for the plot in the format ["YYYY-MM-DD", "YYYY-MM-DD"].
+    - plot_range: list or tuple, optional
+        A list or tuple specifying the y-axis range [min, max] for the plot. If not provided, the function will automatically determine a suitable range based on the data.
+    - plot_space: float
+        The spacing between y-axis ticks. The function will adjust this value if it is too small relative to the range.
+    - station: str or list, optional
+        A specific station ID or a list of station IDs to plot. If not provided, the function plots the median across all stations.
+    - photo_dir: str, optional
+        The directory where the generated plot will be saved. The default is the global variable `Photospace`.
     """
-
     ####################################################################################################################
     # Automatically define the plot_range based on data (if the range does not provided by the user)
     ####################################################################################################################
@@ -369,7 +380,7 @@ def plot_CRMS(
 
     if file_name_o == "WL":
         ax.set_ylabel("Water level [NAVD88,m]")
-        output = os.path.join(Photospace, f"Water_level_{title_out}.png")
+        output = os.path.join(photo_dir, f"Water_level_{title_out}.png")
         if station:
             if isinstance(station, list):
                 for st in station:
@@ -404,7 +415,7 @@ def plot_CRMS(
 
     elif file_name_o == "Temp":
         ax.set_ylabel("Temperature [°C]")
-        output = os.path.join(Photospace, f"Temperature_{title_out}.png")
+        output = os.path.join(photo_dir, f"Temperature_{title_out}.png")
         if station:
             if isinstance(station, list):
                 for st in station:
@@ -439,7 +450,7 @@ def plot_CRMS(
 
     elif file_name_o == "W_HP":
         ax.set_ylabel("Hydroperiod")
-        output = os.path.join(Photospace, f"Hydro_period_{title_out}.png")
+        output = os.path.join(photo_dir, f"Hydro_period_{title_out}.png")
         if station:
             if isinstance(station, list):
                 for st in station:
@@ -474,7 +485,7 @@ def plot_CRMS(
 
     elif file_name_o == "W_depth":
         ax.set_ylabel("Inundation depth [m]")
-        output = os.path.join(Photospace, f"Water_depth_{title_out}.png")
+        output = os.path.join(photo_dir, f"Water_depth_{title_out}.png")
         if station:
             if isinstance(station, list):
                 for st in station:
@@ -509,7 +520,7 @@ def plot_CRMS(
 
     elif file_name_o == "Salinity":
         ax.set_ylabel("Salinity [ppt]")
-        output = os.path.join(Photospace, f"Salinity_{title_out}.png")
+        output = os.path.join(photo_dir, f"Salinity_{title_out}.png")
         if station:
             if isinstance(station, list):
                 for st in station:
@@ -634,6 +645,7 @@ def plot_CRMS(
     plt.show()
     plt.close()
 
+    return output
 
 def data_analysis():
     ########################################################################
@@ -916,10 +928,12 @@ def data_analysis():
     else:
         station_list = None
 
+
     plot_CRMS(
         contious_datasets,
         discrete_datasets,
         "Temp",
+        Data_type,
         plot_period,
         2,
         plot_range=None,
@@ -929,6 +943,7 @@ def data_analysis():
         contious_datasets,
         discrete_datasets,
         "WL",
+        Data_type,
         plot_period,
         0.1,
         plot_range=None,
@@ -938,6 +953,7 @@ def data_analysis():
         contious_datasets,
         discrete_datasets,
         "Salinity",
+        Data_type,
         plot_period,
         4,
         plot_range=None,
@@ -948,6 +964,7 @@ def data_analysis():
         contious_datasets,
         discrete_datasets,
         "W_HP",
+        Data_type,
         plot_period,
         0.2,
         plot_range=None,
@@ -957,6 +974,7 @@ def data_analysis():
         contious_datasets,
         discrete_datasets,
         "W_depth",
+        Data_type,
         plot_period,
         0.1,
         plot_range=None,
