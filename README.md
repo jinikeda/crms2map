@@ -50,9 +50,6 @@ CRMS2Plot: Data analysis and plotting tool after step.2
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    --specify_MA SPECIFY_MA\
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Optional] The user can specify a central moving average window size in days. [Default: yearly averaged]\
 
-### Running the Script
-~~python -m src.CRMS_Continuous_Hydrographic2subsets~~
-
 ### Plot examples
 
 <img src="https://github.com/jinikeda/CRMS2Map/blob/main/Image/Water_level_median.png" alt="Long-term water level" width="400">
@@ -64,6 +61,11 @@ CRMS2Plot: Data analysis and plotting tool after step.2
   <img src="https://github.com/jinikeda/CRMS2Map/blob/main/Image/Salinity_multi_stations.png" alt="Ida salinity"  width="400">
 </p>
 <p style="text-align: left;"><strong>Figure.2</strong> Inundation depth (left) and salinity (right) at multiple CRMS stations during Hurricane Ida in 2021. Command: CRMS2Plot --sdate 2021-08-28 --edate 2021-09-03 --plotdata org --save False --data_type H --staionfile station_list.txt</p>
+
+### Running the Script as a module 
+Not recommended because this may result in unpredictable behavior\
+***python -m src.Python_Filename_withoutSuffix*** \
+e.g., *python -m src.CRMS_Continuous_Hydrographic2subsets* 
 
 ### Release history
 CRMS2Map v1.0: First release on Aug/08/2024 (Only release CRMS2Plot. Interpolation and mapping tools will be released after paper publication)
