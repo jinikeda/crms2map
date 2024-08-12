@@ -4,7 +4,7 @@
 # This file is developed for monthly data analysis. However, it includes hourly and daily analysis capabilities.
 # Developed by the Center for Computation & Technology at Louisiana State University (LSU).
 # Developer: Jin Ikeda
-# Last modified Aug 10, 2024
+# Last modified Aug 12, 2024
 import os
 
 # Import necessary modules
@@ -34,7 +34,7 @@ start_date = None
 end_date = None
 
 # Make Output folder
-Workspace = "C:/Users/jikeda/Desktop/CRMS2Map/CRMS_devtest"
+Workspace = os.getcwd()  # Get the current working directory (same with the setup.py)
 Inputspace = os.path.join(Workspace, "Input")  # Make Input folder
 
 ########################################################################################################################
@@ -58,13 +58,17 @@ os.chdir(Workspace)
 
 Photospace = os.path.join(Workspace, "Photo")
 Outputspace = os.path.join(Workspace, "Output")
-# Output_space=os.path.join(Workspace,'bootstrap_Output')
+Sub_basinspace = os.path.join(Outputspace, "Sub_basin")  # group by basin
+Sub_marshspace = os.path.join(Outputspace, "Sub_marsh")  # group by vegetation
 
 try:
     os.makedirs(Photospace, exist_ok=True)
     os.makedirs(Outputspace, exist_ok=True)
-except:
-    pass
+    # os.makedirs(Sub_basinspace, exist_ok=True)
+    # os.makedirs(Sub_marshspace, exist_ok=True)
+
+except Exception as e:
+    print(f"An error occurred while creating directories: {e}")
 
 
 ### Functions ####################################################################################################
@@ -257,14 +261,12 @@ def plot_CRMS(
         print(f"Data Length: {data_length} days")
     else:
         data_length = (end_date - start_date).days / 365.25  # Data length in years
-        print(f"Data Length: {data_length} years" )
+        print(f"Data Length: {data_length} years")
 
     # Set x-axis date formatter based on the data length
     assert (
         data_length > 0
     ), "Invalid data period. The end date must be after the start date."
-
-
 
     # Set x-axis date formatter and locator based on the data length and type
     if Data_type == "H":
@@ -730,17 +732,6 @@ def data_analysis():
     plot_period = [start_date, end_date_plus_one]  # 'yyyy-mm-dd'
     print("plot_period", plot_period)
 
-    Sub_basinspace = os.path.join(Workspace, "Sub_basin")  # Make Sub_basin folder
-    Sub_marshspace = os.path.join(Workspace, "Sub_marsh")  # Make Sub_marsh folder
-
-    try:
-        # os.makedirs(Photpspace, exist_ok=True)
-        os.makedirs(Sub_basinspace, exist_ok=True)
-        os.makedirs(Sub_marshspace, exist_ok=True)
-
-    except Exception as e:
-        print(f"An error occurred while creating directories: {e}")
-
     #############################################
     # color_palette for plots
     #############################################
@@ -782,19 +773,27 @@ def data_analysis():
     elif Data_type == "Y":
         data_suffix = "Ydata"
 
-    file_name1 = f"CRMS_Water_Temp_2006_2024_{data_suffix}"
-    file_name2 = f"CRMS_Surface_salinity_2006_2024_{data_suffix}"
-    file_name3 = f"CRMS_Geoid99_to_Geoid12a_offsets_2006_2024_{data_suffix}"
-    file_name4 = f"CRMS_Water_Elevation_to_Marsh_2006_2024_wdepth_{data_suffix}"
-    file_name5 = f"CRMS_Water_Elevation_to_Marsh_2006_2024_wd_{data_suffix}"
+    file_name1 = os.path.join(Inputspace, f"CRMS_Water_Temp_2006_2024_{data_suffix}")
+    file_name2 = os.path.join(
+        Inputspace, f"CRMS_Surface_salinity_2006_2024_{data_suffix}"
+    )
+    file_name3 = os.path.join(
+        Inputspace, f"CRMS_Geoid99_to_Geoid12a_offsets_2006_2024_{data_suffix}"
+    )
+    file_name4 = os.path.join(
+        Inputspace, f"CRMS_Water_Elevation_to_Marsh_2006_2024_wdepth_{data_suffix}"
+    )
+    file_name5 = os.path.join(
+        Inputspace, f"CRMS_Water_Elevation_to_Marsh_2006_2024_wd_{data_suffix}"
+    )
 
     file_name = [file_name1, file_name2, file_name3, file_name4, file_name5]
     file_name_o = ["Temp", "Salinity", "WL", "W_depth", "W_HP"]
 
     ### Open discrete files
     if Data_type == "M" or Data_type == "Y":
-        file_name9 = f"Pore_salinity_10_{data_suffix}"
-        file_name10 = f"Pore_salinity_30_{data_suffix}"
+        file_name9 = os.path.join(Inputspace, f"Pore_salinity_10_{data_suffix}")
+        file_name10 = os.path.join(Inputspace, f"Pore_salinity_30_{data_suffix}")
         file_name_discrete = [file_name9, file_name10]
         file_name_o_discrete = ["Pore_10", "Pore_30"]
 
@@ -917,7 +916,15 @@ def data_analysis():
     else:
         station_list = None
 
-    plot_CRMS(contious_datasets, discrete_datasets, "Temp", plot_period, 2, plot_range=None, station=station_list)
+    plot_CRMS(
+        contious_datasets,
+        discrete_datasets,
+        "Temp",
+        plot_period,
+        2,
+        plot_range=None,
+        station=station_list,
+    )
     plot_CRMS(
         contious_datasets,
         discrete_datasets,
@@ -937,8 +944,24 @@ def data_analysis():
         station=station_list,
     )
 
-    plot_CRMS(contious_datasets, discrete_datasets, "W_HP", plot_period, 0.2,plot_range=None,station=station_list)
-    plot_CRMS(contious_datasets, discrete_datasets, "W_depth", plot_period, 0.1,plot_range=None,station=station_list)
+    plot_CRMS(
+        contious_datasets,
+        discrete_datasets,
+        "W_HP",
+        plot_period,
+        0.2,
+        plot_range=None,
+        station=station_list,
+    )
+    plot_CRMS(
+        contious_datasets,
+        discrete_datasets,
+        "W_depth",
+        plot_period,
+        0.1,
+        plot_range=None,
+        station=station_list,
+    )
 
     # ### Step 4 ###########################################################
     # print('##########################################################################################################################\n')
