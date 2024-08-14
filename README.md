@@ -8,7 +8,7 @@ Type: ***conda env create -f env.yml*** \
 ## §2. Activate virtual env
 Type: ***conda activate CRMS2Map***
 
-## §3 Crate a package
+## §3 Create a package
 Type: ***pip install -e .*** \
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -e: editable mode (Preferred for package developers)
 
