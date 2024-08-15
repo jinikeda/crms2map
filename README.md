@@ -31,27 +31,27 @@ Type: ***pip install -e .*** \
 * ***CRMS2Map discrete*** for step.1: Create a subset data for salinity, water temperature, water level, and water level to marsh (hydroperiod and inundation depth) using CRMS_Discrete_Hydrographic2subsets.py
 * ***CRMS2Map resample*** for step.2: Create hourly, daily, monthly, and yearly averaged datasets using CRMS2Resample.py
 * ***CRMS2Map Plot***: Data analysis and plotting tool after step.2\
-  This tool creates a single (bundled) dataset on the user's interested period, including moving averaged datasets and making plots.\
+  This tool creates a single (bundled) dataset on the user's interested period, including moving averaged datasets and making plots. 
 
     usage: [--sdate] [--edate] [--staionfile] [--data_typ] [--save] [--plotdata] [--specify_ma]** \
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <mark>**[Caution] no uppercases are availeble in click**</mark> \
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <mark>**[Caution] no uppercases are availeble in click**</mark> 
 
-    **Options:**\
+    **Options:** 
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    --sdate\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    --sdate \
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;            State date for the data analysis (format: YYYY-MM-DD) [Default: "2008-01-01"]\
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    --edate\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    --edate \
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;           End date for the data analysis (format: YYYY-MM-DD)[Default: "2024-12-31"]\
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    --staionfile\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    --staionfil \
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  Path to station list file <station_list.txt> (format: CRMSxxxx)[Default: None]\
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    --data_type\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    --data_type \
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    Data type: hourly(H), daily(D), monthly(M), and yearly(Y)[Default: M]\
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    --save\
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;                  Save as a single (bundled) dataset and MA_datasets. This is time-consuming when the user uses high spatial datasets. [Default: True]\
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    --plotdata\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    --save \
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;                  Save as a single (bundled) dataset and MA_datasets. This is time-consuming when the user uses high spatial datasets. [Default: True] \
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    --plotdata \
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;   Plot original data (org) or moving average data (MA)[Default: MA]\
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    --specify_ma\
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Optional] The user can specify a central moving average window size in days. [Default: yearly averaged]\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    --specify_ma \
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Optional] The user can specify a central moving average window size in days. [Default: yearly averaged]
 
 ### Plot examples
 
