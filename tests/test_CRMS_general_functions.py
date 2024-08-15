@@ -3,11 +3,14 @@ import shutil
 import pytest
 import pandas as pd
 import numpy as np
+from click.testing import CliRunner
+
 
 from src.CRMS_general_functions import *
 from src.CRMS_Discrete_Hydrographic2subsets import *
 from src.CRMS2Resample import *
 from src.CRMS2Plot import *
+from src.click_main import discrete_subcommand
 
 def test_download_CRMS(tmpdir):
     """Test the download_CRMS function with a sample URL."""
@@ -19,11 +22,11 @@ def test_download_CRMS(tmpdir):
     # Call the function to download the file
     result = download_CRMS(url, zip_file, csv_file, str(input_space))
 
-def test_main_function(mocker, tmpdir):
-    """Test the main function for CRMS_Continuous_Hydrographic2subsets.py."""
-    original_input_space = os.path.join(os.getcwd(), "Input")
 
-    # Create the temporary input directory within tmpdir
+@pytest.fixture
+def setup_files(tmpdir):
+    """Set up the required files in the temporary directory."""
+    original_input_space = os.path.join(os.getcwd(), "Input")
     tmp_input_space = tmpdir.mkdir("Input")
 
     # Copy necessary files from the original input space to tmpdir
@@ -33,28 +36,39 @@ def test_main_function(mocker, tmpdir):
         dst_file = os.path.join(tmp_input_space, file_name)
         shutil.copy(src_file, dst_file)
 
+    return tmp_input_space
+
+
+def test_main_function(mocker, tmpdir, setup_files):
+    """Test the main function for CRMS_Discrete_Hydrographic2subsets.py."""
+
     # Mock the os.getcwd() to return the temporary directory
     mocker.patch("os.getcwd", return_value=str(tmpdir))
 
     # Mock the download_CRMS function to avoid actual downloading
     mocker.patch("src.CRMS_general_functions.download_CRMS", return_value=True)
 
-    # Call the function
-    subsets()
+    # Invoke the Click command using CliRunner
+    runner = CliRunner()
+    result = runner.invoke(discrete_subcommand)
+
+    # Check that the command executed successfully
+    assert result.exit_code == 0, f"Command failed with exit code {result.exit_code}. Output: {result.output}"
 
     # Define the expected directories and files
     process_space = os.path.join(str(tmpdir), 'Process')
-
-    # These are placeholders; replace with actual expected output files
     expected_files = [
-        os.path.join(tmp_input_space, "GEOID99_TO_GEOID12A.csv")]
+        os.path.join(setup_files, "GEOID99_TO_GEOID12A.csv"),
+        # Add more expected files if needed
+    ]
 
-    # Check if the expected files were created
+    # Check if the expected files were created or exist
     for file_path in expected_files:
         assert os.path.exists(file_path), f"Expected file {file_path} does not exist."
 
     # Check if the Process directory was created
     assert os.path.exists(process_space), "Process directory was not created."
+
 @pytest.fixture
 def sample_data():
     """Fixture that returns a sample pandas DataFrame."""
@@ -203,8 +217,8 @@ def mock_plot_data():
     # Mock data to simulate the plot data with the time index
     return {
         'WL': pd.DataFrame({
-            'CRMS0001': [1.2, 1.4, 1.1, 1.3],
-            'CRMS0002': [0.9, 1.0, 0.8, 0.7]
+            'CRMS0002': [1.2, 1.4, 1.1, 1.3],
+            'CRMS0003': [0.9, 1.0, 0.8, 0.7]
         }, index=time_index)
     }
 
@@ -214,7 +228,7 @@ def test_plot_CRMS(mock_plot_data, tmpdir):
     file_name_o = "WL"
 
     plot_space = 0.1
-    Data_type = "M"
+    Data_type = "Y"
     output_dir = tmpdir.mkdir("Photo")
 
     # Update the output directory in the plot_CRMS function call

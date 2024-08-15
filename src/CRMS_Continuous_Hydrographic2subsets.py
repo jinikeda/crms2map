@@ -3,12 +3,14 @@
 # CRMS_Continuous_Hydrographic2subsets
 # Developed by the Center for Computation & Technology and Center for Coastal Ecosystem Design Studio at Louisiana State University (LSU).
 # Developer: Jin Ikeda, Shu Gao, and Christopher E. Kees
-# Last modified Aug 8, 2024
+# Last modified Aug 14, 2024
 
 from CRMS_general_functions import *
 
 
-def subsets():
+@click.command()
+def continuous_subcommand():
+    """Handle continuous hydrographic data processing."""
 
     ### Step 1 #############################################################################################################
     print("Step 1: Auto retrieve the original datasets")
@@ -257,6 +259,4 @@ def subsets():
     print("Time to Compute: \t\t\t", elapsed_time, " seconds")
     print("Job Finished ʕ •ᴥ•ʔ")
 
-
-if __name__ == "__main__":
-    subsets()
+    pass

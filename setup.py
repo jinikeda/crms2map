@@ -49,10 +49,7 @@ setup(
     install_requires=install_requires,
     entry_points={
         "console_scripts": [
-            "CRMS2Map_continuous=CRMS_Continuous_Hydrographic2subsets:subsets",
-            "CRMS2Map_discrete=CRMS_Discrete_Hydrographic2subsets:subsets",
-            "CRMS2Map_resample=CRMS2Resample:resample",
-            "CRMS2Plot=CRMS2Plot:data_analysis",
+            "CRMS2Map=click_main:click_main",
         ],
     },
     author=author,

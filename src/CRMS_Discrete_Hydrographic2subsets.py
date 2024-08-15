@@ -3,12 +3,15 @@
 # CRMS_Discrete_Hydrographic for porewater salinity
 # Developed by the Center for Computation & Technology and Center for Coastal Design Studio at Louisiana State University (LSU).
 # Developer: Jin Ikeda, Shu Gao, and Christopher E. Kees
-# Last modified Aug 9, 2024
+# Last modified Aug 14, 2024
 
 from CRMS_general_functions import *
 
 
-def subsets():
+@click.command()
+def discrete_subcommand():
+    """Handle discrete hydrographic data processing."""
+
     ### Step 1 #############################################################################################################
     print("Step 1: Auto retrieve the original datasets")
     ########################################################################################################################
@@ -224,6 +227,4 @@ def subsets():
     print("Time to Compute: \t\t\t", elapsed_time, " seconds")
     print("Job Finished ʕ •ᴥ•ʔ")
 
-
-if __name__ == "__main__":
-    subsets()
+    pass

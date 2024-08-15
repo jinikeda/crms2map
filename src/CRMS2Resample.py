@@ -3,12 +3,15 @@
 # CRMS2Resample
 # Developed by the Center for Computation & Technology and Center for Coastal Ecosystem Design Studio at Louisiana State University (LSU).
 # Developer: Jin Ikeda, Shu Gao, and Christopher E. Kees
-# Last modified Aug 8, 2024
+# Last modified Aug 14, 2024
 
 from CRMS_general_functions import *
 
 
-def resample():
+@click.command()
+def resample_subcommand():
+    """Handle data resampling."""
+
     ### Step 2 #############################################################################################################
     print("Step 2: Resample and data-processing")
     ########################################################################################################################
@@ -222,6 +225,4 @@ def resample():
     print("Time to Compute: \t\t\t", elapsed_time, " seconds")
     print("Job Finished ʕ •ᴥ•ʔ")
 
-
-if __name__ == "__main__":
-    resample()
+    pass
