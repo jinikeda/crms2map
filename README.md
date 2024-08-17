@@ -6,7 +6,7 @@ Type: ***conda env create -f env.yml*** \
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; black is an uncompromising Python code formatter, flack8 is a linter to check code, and pytest and mock are code testing tools. These packages are not mandatory for running CRMS2Map.  
 
 ## §2. Activate virtual env
-Type: ***conda activate CRMS2Map_env***
+Type: ***conda activate CRMS_env***
 
 ## §3 Create a package: CRMS2Map
 Type: ***pip install -e .*** \
