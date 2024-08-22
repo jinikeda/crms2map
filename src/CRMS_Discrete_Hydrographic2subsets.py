@@ -5,7 +5,7 @@
 # Developer: Jin Ikeda, Shu Gao, and Christopher E. Kees
 # Last modified Aug 14, 2024
 
-from CRMS_general_functions import *
+from src.CRMS_general_functions import *
 
 
 @click.command()
@@ -57,9 +57,9 @@ def discrete_subcommand():
     ########################################################################################################################
 
     url = (
-        "https://cims.coastal.la.gov/RequestedDownloads/ZippedFiles/"
-        + file_name
-        + file_suffix_zip
+            "https://cims.coastal.la.gov/RequestedDownloads/ZippedFiles/"
+            + file_name
+            + file_suffix_zip
     )
     download_CRMS(url, zip_file, csv_file, Inputspace)  # Download the file
 
@@ -117,8 +117,8 @@ def discrete_subcommand():
     CRMS_pore.head(20)
 
     CRMS_pore = CRMS_pore.iloc[
-        :, [0, 5, 14, 36, 37]
-    ]  # Select CPRA Station ID, Measurement Depth (ft), Soil Porewater Salinity (ppt),Latitude, and Longitude
+                :, [0, 5, 14, 36, 37]
+                ]  # Select CPRA Station ID, Measurement Depth (ft), Soil Porewater Salinity (ppt),Latitude, and Longitude
 
     # define the start and end dates
     # start_date = '2020-01-01'

@@ -5,7 +5,7 @@
 # Developer: Jin Ikeda, Shu Gao, and Christopher E. Kees
 # Last modified Aug 14, 2024
 
-from CRMS_general_functions import *
+from src.CRMS_general_functions import *
 
 
 @click.command()
@@ -59,9 +59,9 @@ def continuous_subcommand():
     ########################################################################################################################
 
     url = (
-        "https://cims.coastal.la.gov/RequestedDownloads/ZippedFiles/"
-        + file_name
-        + file_suffix_zip
+            "https://cims.coastal.la.gov/RequestedDownloads/ZippedFiles/"
+            + file_name
+            + file_suffix_zip
     )
     download_CRMS(url, zip_file, csv_file, Inputspace)  # Download the file
 
@@ -120,8 +120,8 @@ def continuous_subcommand():
     # CRMS_continuous.head(20)
 
     CRMS_continuous = CRMS_continuous.iloc[
-        :, [0, 3, 7, 11, 13, 16, 41, 42]
-    ]  # Station ID,Adjusted Temperature,Adjusted Salinity (ppt),Adjusted Water Elevation to Marsh (ft),Adjusted Water Elevation to Datum (ft)
+                      :, [0, 3, 7, 11, 13, 16, 41, 42]
+                      ]  # Station ID,Adjusted Temperature,Adjusted Salinity (ppt),Adjusted Water Elevation to Marsh (ft),Adjusted Water Elevation to Datum (ft)
 
     # Round down to nearest minute (#some data shows several seconds difference in the time index)
     CRMS_continuous.index = CRMS_continuous.index.floor("min")
@@ -195,8 +195,8 @@ def continuous_subcommand():
 
     # Extract rows with Station IDs including "-H" which is Hydrographic hourly
     offsets_hydrographic = offsets.loc[
-        :, offsets.columns.str.contains("Date|-H")
-    ].copy()
+                           :, offsets.columns.str.contains("Date|-H")
+                           ].copy()
     offsets_hydrographic.shape
     offsets_hydrographic.index = pd.to_datetime(offsets.Date)
     offsets_hydrographic.drop(["Date"], axis=1, inplace=True)
@@ -232,7 +232,7 @@ def continuous_subcommand():
     # Modify the Geoid difference
     # get the row number of Geoid12A start day
     geoid_row = offset_CRMSw2d.index.get_loc(pd.Timestamp(year=2013, month=10, day=1))
-    print("Before adjustment", offset_CRMSw2d.iloc[geoid_row - 3 : geoid_row + 3, :])
+    print("Before adjustment", offset_CRMSw2d.iloc[geoid_row - 3: geoid_row + 3, :])
 
     for i, col in enumerate(offset_CRMSw2d.columns):
         #    print (col)
@@ -241,7 +241,7 @@ def continuous_subcommand():
         )
     # offset_CRMSw2d.iloc[:,:]=round(offset_CRMSw2d.iloc[:,:]/3.28084,2) # convert into [m]
 
-    print("After adjustment", offset_CRMSw2d.iloc[geoid_row - 3 : geoid_row + 3, :])
+    print("After adjustment", offset_CRMSw2d.iloc[geoid_row - 3: geoid_row + 3, :])
 
     offset_CRMSw2d = offset_CRMSw2d.iloc[1:, :]  # delete first dummy row
     # offset_CRMSw2d.head(5)

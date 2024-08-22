@@ -5,10 +5,15 @@
 # Developer: Jin Ikeda and Christopher E. Kees
 # Last modified Aug 14, 2024
 
+import seaborn as sns
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import geopandas as gpd
-import os, sys, zipfile, shutil
+import os
+import sys
+import zipfile
+import shutil
 import click
 import argparse
 from datetime import datetime
@@ -21,13 +26,11 @@ from osgeo.gdalconst import *
 
 gdal.AllRegister()  # Register all of drivers
 ogr.UseExceptions()  # Use exceptions for errors
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 
-########################################################################################################################
+##########################################################################
 # y_variable and date_style for data processing
-########################################################################################################################
+##########################################################################
 def download_CRMS(url, zip_file, csv_file, folder_path):
     # Remove the existing CSV file if it exists
     csv_file = os.path.join(folder_path, csv_file)
@@ -49,7 +52,7 @@ def download_CRMS(url, zip_file, csv_file, folder_path):
             f.write(response.content)
         print("Downloaded an original dataset on windows")
 
-    except:
+    except BaseException:
         print("failed to download the file")
 
     # Use zipfile to extract the zip file
@@ -69,8 +72,10 @@ def get_CRMS_file(Data):
         3: "CRMS_Water_Elevation_to_Marsh.csv",
         4: "CRMS_Water_Temp.csv",
         5: "Something_wrong",
-        6: "CRMS_Water_Elevation_to_Marsh_wd.csv",  # "CRMS_Water_Elevation_to_Marsh_2006_2024_wd.csv", # hidden file for hydrographic data
-        7: "CRMS_Water_Elevation_to_Marsh_wdepth.csv",  # "CRMS_Water_Elevation_to_Marsh_2006_2024_wdepth.csv" # hidden file for inundation data
+        # "CRMS_Water_Elevation_to_Marsh_2006_2024_wd.csv", # hidden file for hydrographic data
+        6: "CRMS_Water_Elevation_to_Marsh_wd.csv",
+        7: "CRMS_Water_Elevation_to_Marsh_wdepth.csv",
+        # "CRMS_Water_Elevation_to_Marsh_2006_2024_wdepth.csv" # hidden file for inundation data
     }
 
     file = data_to_filename.get(
@@ -90,7 +95,7 @@ def get_y_variable(Input_file):
     elif "Geoid99_to_Geoid12a" in Input_file or "WL" in Input_file:
         y_variable = "WL"
     elif (
-        "Water_Elevation_to_Marsh" in Input_file and "wd." in Input_file
+            "Water_Elevation_to_Marsh" in Input_file and "wd." in Input_file
     ):  # Need to add comma
         y_variable = "W_HP"
     elif "Water_Elevation_to_Marsh" in Input_file and "wdepth" in Input_file:
@@ -118,7 +123,11 @@ def get_date_info(Input_file):
         "Ddata": 365,
         "Hdata": 8766,
     }  # Set a moving window range for yearly analysis
-    date_formats_removal = {"Ydata": "Y", "Mdata": "M", "Ddata": "D", "Hdata": "H"}
+    date_formats_removal = {
+        "Ydata": "Y",
+        "Mdata": "M",
+        "Ddata": "D",
+        "Hdata": "H"}
 
     for key, value in date_formats.items():
         if key in Input_file:
@@ -148,15 +157,21 @@ def get_date_info(Input_file):
 
 
 def get_file_lists(
-    Workspace, folder_pattern, file_pattern, methods, knn_values, y_variable
-):
+        Workspace,
+        folder_pattern,
+        file_pattern,
+        methods,
+        knn_values,
+        y_variable):
     Input_file_list = []
     for method, knn in zip(methods, knn_values):
         # Create the folder pattern
         if folder_pattern is not None:
-            formatted_folder_pattern = folder_pattern.format(y_variable, knn, method)
+            formatted_folder_pattern = folder_pattern.format(
+                y_variable, knn, method)
             print(formatted_folder_pattern)
-            file_path = os.path.join(Workspace, formatted_folder_pattern, file_pattern)
+            file_path = os.path.join(
+                Workspace, formatted_folder_pattern, file_pattern)
         else:
             file_path = os.path.join(Workspace, file_pattern)
 
@@ -173,7 +188,12 @@ def get_file_lists(
     return Input_file_list
 
 
-def get_folder_lists(Workspace, folder_pattern, methods, knn_values, y_variable):
+def get_folder_lists(
+        Workspace,
+        folder_pattern,
+        methods,
+        knn_values,
+        y_variable):
     folder_lists = {}
     for method, knn in zip(methods, knn_values):
         folder_list = get_matching_folders(
@@ -202,11 +222,14 @@ def save_to_excel(outName, data_dict):
             df.to_excel(writer, sheet_name=sheet_name)
 
 
-########################################################################################################################
+##########################################################################
 # Pandas DataFrame and GeoDataFrame functions
-########################################################################################################################
-def create_dataframe(file_name, date_column="Date", sheet_name=None, usecols=None):
-
+##########################################################################
+def create_dataframe(
+        file_name,
+        date_column="Date",
+        sheet_name=None,
+        usecols=None):
     # Use the appropriate pandas function to read the file
     if ".xlsx" in file_name:
         try:
@@ -214,14 +237,19 @@ def create_dataframe(file_name, date_column="Date", sheet_name=None, usecols=Non
                 sheet_name = (
                     0  # Default to the first sheet if no sheet name is provided
                 )
-            df = pd.read_excel(file_name, sheet_name=sheet_name, usecols=usecols)
+            df = pd.read_excel(
+                file_name,
+                sheet_name=sheet_name,
+                usecols=usecols)
         except UnicodeDecodeError:
-            print("encoding error")  # CRMS = pd.read_csv(file, encoding='utf-8')
+            # CRMS = pd.read_csv(file, encoding='utf-8')
+            print("encoding error")
     elif ".csv" in file_name:
         try:
             df = pd.read_csv(file_name, usecols=usecols)
         except UnicodeDecodeError:
-            print("encoding error")  # CRMS = pd.read_csv(file, encoding='utf-8')
+            # CRMS = pd.read_csv(file, encoding='utf-8')
+            print("encoding error")
     else:
         raise ValueError(
             "Unsupported file type. The file must be a .xlsx or .csv file."
@@ -238,7 +266,7 @@ def create_dataframe(file_name, date_column="Date", sheet_name=None, usecols=Non
         try:
             df.index = pd.to_datetime(df[date_column])
             df.drop([date_column], axis=1, inplace=True)
-        except:
+        except BaseException:
             print("Date column not found")
     # Future revision may consider filtering of datasets
 
@@ -255,9 +283,10 @@ def df_move_row_after(df, row_to_move, target_row):
     # Get the index of the row to place after
     index = df.index.get_loc(target_row)
 
-    # Split the DataFrame into two parts: before and after the row to place after
+    # Split the DataFrame into two parts: before and after the row to place
+    # after
     df1 = df.iloc[: index + 1]
-    df2 = df.iloc[index + 1 :]
+    df2 = df.iloc[index + 1:]
 
     # Append the stored row to the first part
     df1.loc[row_to_move] = df_stored_data
@@ -281,7 +310,10 @@ def rename_and_set_index(df, rename_str=None):
 # make a dataframe of TFZ and TOZ areas
 def Area_process_dataframe(file_name, date_removal, sheet_name=None):
     # Create the DataFrame
-    df = create_dataframe(file_name, date_column="dummy", sheet_name=sheet_name)
+    df = create_dataframe(
+        file_name,
+        date_column="dummy",
+        sheet_name=sheet_name)
     # print(df.head())
     df.columns = df.columns.str.replace(
         date_removal, ""
@@ -316,7 +348,7 @@ def create_df2gdf(df, xy_list, drop_list, crs, output_file=None):
         geometry=gpd.points_from_xy(df[xy_list[0]], df[xy_list[1]], crs=crs),
     )
 
-    if output_file != None:
+    if output_file is not None:
         gdf.to_file(output_file, driver="ESRI Shapefile")
 
     return gdf
@@ -343,7 +375,8 @@ def Spatial_join_basin(df, polygon, GCS, column_list):
             df, geometry=gpd.points_from_xy(df.Long, df.Lat, crs=GCS)
         )
     else:
-        raise ValueError("DataFrame does not have longitude and latitude columns")
+        raise ValueError(
+            "DataFrame does not have longitude and latitude columns")
 
     # Create a copy of dataframe and set 'Basin' to 'Other'
     df_basin = gdf.copy()
@@ -355,7 +388,8 @@ def Spatial_join_basin(df, polygon, GCS, column_list):
     # Find the indices where 'Basin' is not NaN in gdf
     row_index = gdf[gdf["Basin"].notna()].index
 
-    # Replace the 'Basin' values in gdf_basin with the corresponding values in gdf for the indices found
+    # Replace the 'Basin' values in gdf_basin with the corresponding values in
+    # gdf for the indices found
     df_basin.loc[row_index, "Basin"] = gdf.loc[row_index, "Basin"]
 
     # add basin info to the column list
@@ -365,9 +399,9 @@ def Spatial_join_basin(df, polygon, GCS, column_list):
     return df_basin
 
 
-########################################################################################################################
+##########################################################################
 # Raster and Shapefile functions
-########################################################################################################################
+##########################################################################
 def read_raster(Rasterdata, GA_stype=GA_ReadOnly):  # GA_ReadOnly (0) or GA_Update(1)
     Read_raster = gdal.Open(Rasterdata, GA_stype)
     if Rasterdata is None:
@@ -406,7 +440,7 @@ def read_raster(Rasterdata, GA_stype=GA_ReadOnly):  # GA_ReadOnly (0) or GA_Upda
 
 
 def read_raster_values(
-    Rasterdata, GA_stype=GA_ReadOnly
+        Rasterdata, GA_stype=GA_ReadOnly
 ):  # GA_ReadOnly (0) or GA_Update(1)
     Read_raster = gdal.Open(Rasterdata, GA_stype)
     if Rasterdata is None:
@@ -417,15 +451,21 @@ def read_raster_values(
     # Data type of the values
     # print('\tdata type is', gdal.GetDataTypeName(band.DataType))  # Each raster file has a different data type
     # Get band value info
-    RV = Read_raster.GetRasterBand(1).ReadAsArray()  # raster values in the band
+    RV = Read_raster.GetRasterBand(
+        1).ReadAsArray()  # raster values in the band
     RV_1D = RV.flatten()  # Convert to 1D array
     RV_1D = RV_1D.reshape(1, -1)  # Reshape to have shape (1, xxx)
 
     return RV_1D, RV
 
 
-def create_gdal_tiff(z_interp, transform, prj, bandnum, nodata_value, Raster_name):
-
+def create_gdal_tiff(
+        z_interp,
+        transform,
+        prj,
+        bandnum,
+        nodata_value,
+        Raster_name):
     # Make a tiff file
     gtiff_driver = gdal.GetDriverByName("GTiff")  # Use GeoTIFF driver
 
@@ -433,18 +473,21 @@ def create_gdal_tiff(z_interp, transform, prj, bandnum, nodata_value, Raster_nam
         Raster_name, z_interp.shape[1], z_interp.shape[0], 1, gdal.GDT_Float64
     )  # Create a output file
 
-    out_ds.SetProjection(prj)  # Set the projection directly from the prj string
+    # Set the projection directly from the prj string
+    out_ds.SetProjection(prj)
 
     out_ds.SetGeoTransform(transform)
     out_band = out_ds.GetRasterBand(bandnum)
     out_band.WriteArray(z_interp)
-    # out_band.WriteArray(np.flipud(z_interp))  # This time we read gdal data so, don't need to use flipud: bottom row <-> top row due to origin of raster file
+    # out_band.WriteArray(np.flipud(z_interp))  # This time we read gdal data
+    # so, don't need to use flipud: bottom row <-> top row due to origin of
+    # raster file
     out_band = out_ds.GetRasterBand(bandnum).SetNoDataValue(
         nodata_value
     )  # Exclude nodata value
-    out_band = out_ds.GetRasterBand(bandnum).ComputeStatistics(
-        True
-    )  # Calculate statistics for Raster pyramids (Pyramids can speed up the display of raster data)
+    # Calculate statistics for Raster pyramids (Pyramids can speed up the
+    # display of raster data)
+    out_band = out_ds.GetRasterBand(bandnum).ComputeStatistics(True)
     print("maximum value of interpolated data is", np.max(z_interp))
 
     del out_ds
@@ -452,8 +495,15 @@ def create_gdal_tiff(z_interp, transform, prj, bandnum, nodata_value, Raster_nam
 
 
 def write_raster(
-    src, raster, transform, nodata_value, method_dict, method, i, date, Outputspace
-):
+        src,
+        raster,
+        transform,
+        nodata_value,
+        method_dict,
+        method,
+        i,
+        date,
+        Outputspace):
     out_meta = src.meta.copy()
     out_meta.update(
         {
@@ -471,13 +521,13 @@ def write_raster(
 
 
 def rasterize_shapefile_to_tiff(
-    shapeFile,
-    base_tifFile,
-    Rasterize_file,
-    layer_Attribute,
-    dtype,
-    nodata_value,
-    stats_flag=False,
+        shapeFile,
+        base_tifFile,
+        Rasterize_file,
+        layer_Attribute,
+        dtype,
+        nodata_value,
+        stats_flag=False,
 ):
     # Load the shapefile and change the BASIN_ID values
     shapefile = gpd.read_file(shapeFile)
@@ -505,7 +555,8 @@ def rasterize_shapefile_to_tiff(
         "CS",
         "Pearl",
     ]  # for mapping data
-    # Create a dictionary that maps the original BASIN values to the new BASIN_ID values
+    # Create a dictionary that maps the original BASIN values to the new
+    # BASIN_ID values
     basin_id_dict = {basin: i + 1 for i, basin in enumerate(sort_basin)}
 
     shapefile["BASIN_ID"] = shapefile["BASIN"].map(
@@ -519,7 +570,8 @@ def rasterize_shapefile_to_tiff(
     layer = shapefile.GetLayer()
 
     # Get the bounds of the shapefile
-    prj, rows, cols, transform, bandnum = read_raster(base_tifFile, GA_ReadOnly)
+    prj, rows, cols, transform, bandnum = read_raster(
+        base_tifFile, GA_ReadOnly)
 
     out_drv = gdal.GetDriverByName("GTiff")
     out_ds = out_drv.Create(
@@ -534,10 +586,13 @@ def rasterize_shapefile_to_tiff(
 
     # Create a new raster band
     band = out_ds.GetRasterBand(1)
-    band.Fill(nodata_value)  # Temporary create a raster file filled with nodata value
+    # Temporary create a raster file filled with nodata value
+    band.Fill(nodata_value)
 
     # Rasterize the input layer to the output raster
-    gdal.RasterizeLayer(out_ds, [1], layer, options=["ATTRIBUTE=" + layer_Attribute])
+    gdal.RasterizeLayer(
+        out_ds, [1], layer, options=[
+            "ATTRIBUTE=" + layer_Attribute])
     band.SetNoDataValue(nodata_value)
     stats = band.ComputeStatistics(0)
     min_val, max_val, mean_val, std_dev_val = stats
@@ -600,7 +655,11 @@ def extract_point_values(raster_path, points_path):
     return raster_values
 
 
-def create_contour_line(raster_file, nodata_value, Contour_name, contour_list=None):
+def create_contour_line(
+        raster_file,
+        nodata_value,
+        Contour_name,
+        contour_list=None):
     # Open the raster file
     raster = gdal.Open(raster_file)
 
@@ -618,7 +677,8 @@ def create_contour_line(raster_file, nodata_value, Contour_name, contour_list=No
     print("Max raster value is", rasterMax, "[unit]")
 
     # Create the output shapefile
-    contourDs = ogr.GetDriverByName("ESRI Shapefile").CreateDataSource(Contour_name)
+    contourDs = ogr.GetDriverByName(
+        "ESRI Shapefile").CreateDataSource(Contour_name)
 
     if contourDs is None:
         raise ValueError("Creation of output file failed")
@@ -636,9 +696,9 @@ def create_contour_line(raster_file, nodata_value, Contour_name, contour_list=No
     if contour_list is not None:
         if contour_list == "auto":
             contour_list = list(np.arange(0, np.ceil(rasterMax), 1))
-            contour_list.append(
-                0.5
-            )  # Add the 0.5 contour line for the coastal oligohaline conditions are defined as salt concentrations between 0.5 and 5 ppt
+            # Add the 0.5 contour line for the coastal oligohaline conditions
+            # are defined as salt concentrations between 0.5 and 5 ppt
+            contour_list.append(0.5)
             contour_list.sort()
         else:
             contour_list = contour_list
@@ -656,12 +716,12 @@ def create_contour_line(raster_file, nodata_value, Contour_name, contour_list=No
     return Contour_name
 
 
-########################################################################################################################
+##########################################################################
 # Statistical analysis functions
-########################################################################################################################
-def add_stats(
-    df, first_col
-):  # Caution excel output includes 'xxx. " ' " cannot be treated as numeric and differs from this output.
+##########################################################################
+# Caution excel output includes 'xxx. " ' " cannot be treated as numeric
+# and differs from this output.
+def add_stats(df, first_col):
     # first col=0 for statistical analyssis
     quantiles = df.iloc[:, first_col:].quantile(
         [0.25, 0.5, 0.75], axis=1, numeric_only=True, interpolation="linear"
@@ -676,7 +736,8 @@ def add_stats(
 
 
 def calculate_gdf_error(gdf, date):
-    gdf["error"] = gdf[date] - gdf["interp"]  # observed value - interpolated value
+    # observed value - interpolated value
+    gdf["error"] = gdf[date] - gdf["interp"]
     return gdf
 
 
@@ -684,11 +745,11 @@ def merge_shapefiles(shp1, shp2, date, i):
     merged_shp = shp1.merge(
         shp2.loc[:, [date, "error", shp2.columns[0]]], on=shp2.columns[0], how="left"
     )
-    target_index = merged_shp.columns.get_loc(
-        "geometry"
-    )  # Use the geometry column index to get the index of the columns: date and 'error'
+    # Use the geometry column index to get the index of the columns: date and
+    # 'error'
+    target_index = merged_shp.columns.get_loc("geometry")
     if target_index + 1 + 2 * i < len(
-        merged_shp.columns
+            merged_shp.columns
     ) and target_index + 2 + 2 * i < len(merged_shp.columns):
         merged_shp.rename(
             columns={
@@ -710,13 +771,13 @@ def create_error_sheet(csv_file):
         np.arange(data.columns.get_loc("test_e_0"), data.shape[1], 2)
     )  # CRMS_Sta, Long, Lat, NGOM2
     df_error = data.iloc[:, error_list]
-    data_frame = df_error.iloc[:, df_error.columns.get_loc("test_e_0") :]
+    data_frame = df_error.iloc[:, df_error.columns.get_loc("test_e_0"):]
 
     pd.set_option("mode.chained_assignment", None)
     std_column = data_frame.std(axis=1, skipna=True, ddof=0)
     SE_column = data_frame.sem(axis=1, skipna=True, ddof=0)
     MSE_column = data_frame.div(std_column, axis=0).mean(axis=1, skipna=True)
-    RMSE_column = (data_frame**2).mean(axis=1, skipna=True) ** 0.5
+    RMSE_column = (data_frame ** 2).mean(axis=1, skipna=True) ** 0.5
     RMSSE_column = ((data_frame.div(std_column, axis=0)) ** 2).mean(
         axis=1, skipna=True
     ) ** 0.5
@@ -751,37 +812,40 @@ def create_error_sheet(csv_file):
 
 
 def calculate_statistics(
-    csv_file,
+        csv_file,
 ):  # Calculate statistics using observation and interpolation
     df = pd.read_csv(csv_file)
     refdata = df.iloc[:, 0]  # observation
     model = df.iloc[:, 1]  # interpolation
-    data_frame = df.iloc[:, 2]  # difference between observation and interpolation
+    # difference between observation and interpolation
+    data_frame = df.iloc[:, 2]
     MEAN = data_frame.mean(axis=0, skipna=True)  # Mean
-    STD = data_frame.std(axis=0, skipna=True, ddof=0)  # Population standard deviation
+    # Population standard deviation
+    STD = data_frame.std(axis=0, skipna=True, ddof=0)
     SE = data_frame.sem(
         axis=0, skipna=True, ddof=0
     )  # Mean Standard Error = std/(n**0.5)
     MSE = (
         data_frame.abs().div(STD).mean(axis=0, skipna=True)
     )  # Mean Standardized Error = (error/std)/n
-    RMSE = (data_frame**2).mean(axis=0, skipna=True) ** 0.5  # Root square mean error
+    # Root square mean error
+    RMSE = (data_frame ** 2).mean(axis=0, skipna=True) ** 0.5
     RMSSE = ((data_frame.div(STD)) ** 2).mean(
         axis=0, skipna=True
     ) ** 0.5  # Root square mean error #Root Mean Square Standardized Error
 
     S = data_frame.dropna().shape[0]  # Number of data
     MAE = np.mean(abs(data_frame))
-    se = data_frame**2
-    mo = np.sqrt(np.nanmean((refdata) ** 2))  # root mean square of reference data
+    se = data_frame ** 2
+    # root mean square of reference data
+    mo = np.sqrt(np.nanmean((refdata) ** 2))
     SI = STD / mo  # Scatter index
     O = np.nanmean(np.nanmean(model))
     sO = model - O
     P = np.nanmean(np.nanmean(refdata))
     sP = refdata - P
-    IA = 1 - np.sum(se) / (
-        np.sum(sO**2) + np.sum(sP**2) + S * (O - P) ** 2 + 2 * abs(np.sum(sO * sP))
-    )
+    IA = 1 - np.sum(se) / (np.sum(sO ** 2) + np.sum(sP ** 2) +
+                           S * (O - P) ** 2 + 2 * abs(np.sum(sO * sP)))
 
     df.loc[0, ["num_sample"]] = S
     df.loc[0, ["SE"]] = SE
@@ -796,9 +860,9 @@ def calculate_statistics(
     return df
 
 
-########################################################################################################################
+##########################################################################
 # Plotting functions
-########################################################################################################################
+##########################################################################
 def normalize_rgb(rgb_values):
     return [value / 255 for value in rgb_values]
 
@@ -806,22 +870,25 @@ def normalize_rgb(rgb_values):
 # Define the custom color palette
 def create_color_palette():
     def normalize_rgb(rgb_values):
-        # Normalize RGB values to the [0, 1] range, which is the format matplotlib accepts.
+        # Normalize RGB values to the [0, 1] range, which is the format
+        # matplotlib accepts.
         return [value / 255 for value in rgb_values]
 
     color_palette_methods = []
 
-    color_palette_methods.append(normalize_rgb([181, 124, 0]))  # Strong orange Krige
+    color_palette_methods.append(normalize_rgb(
+        [181, 124, 0]))  # Strong orange Krige
     color_palette_methods.append(normalize_rgb([223, 115, 255]))  # red # IDW
     color_palette_methods.append(normalize_rgb([0, 128, 0]))  # green RF
-    color_palette_methods.append(normalize_rgb([30, 144, 255]))  # blue # RF_geo
+    color_palette_methods.append(
+        normalize_rgb([30, 144, 255]))  # blue # RF_geo
 
     return color_palette_methods
 
 
 def set_color_entries():
-
-    # Create a color table for the classified raster first before writing the array
+    # Create a color table for the classified raster first before writing the
+    # array
     colors = gdal.ColorTable()
     # Set the color entries for the classes
 

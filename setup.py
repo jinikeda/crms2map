@@ -44,12 +44,17 @@ if not os.path.exists("README.md"):
 setup(
     name=package_name,
     version=version,
-    packages=find_packages(where="src"),
-    package_dir={"": "src"},
+    packages=find_packages(include=['src', 'tests']),  # Include both src and tests packages
+    package_dir={
+        "tests": "tests",  # Map the tests package to the tests directory
+        "src": "src",  # Map the src package to the src directory
+    },
     install_requires=install_requires,
+    # tests_require=['pytest'],
+    # test_suite='tests',
     entry_points={
         "console_scripts": [
-            "CRMS2Map=click_main:click_main",
+            "CRMS2Map=src.click_main:click_main",
         ],
     },
     author=author,

@@ -5,7 +5,7 @@
 # Developer: Jin Ikeda, Shu Gao, and Christopher E. Kees
 # Last modified Aug 14, 2024
 
-from CRMS_general_functions import *
+from src.CRMS_general_functions import *
 
 
 @click.command()

@@ -11,7 +11,7 @@ from datetime import timedelta
 
 # plot
 import matplotlib.dates as mp_dates
-from CRMS_general_functions import *
+from src.CRMS_general_functions import *
 
 
 @click.command()
@@ -61,7 +61,6 @@ def plot_subcommand(sdate, edate, stationfile, data_type, save, plotdata, specif
 
 
 def plot_data(sdate, edate, stationfile, data_type, save, plotdata, specify_ma):
-
     """
     This function handles the data analysis and plotting based on the provided arguments.
 
@@ -72,7 +71,7 @@ def plot_data(sdate, edate, stationfile, data_type, save, plotdata, specify_ma):
     - data_type: Data type (hourly(H), daily(D), monthly(M), yearly(Y))
     - save: Whether to save the processed data
     - plotdata: Whether to plot original data (org) or moving average data (MA)
-    - specify_MA: [Optional] Central moving average window size in days. Default is yearly averaged.
+    - specify_ma: [Optional] Central moving average window size in days. Default is yearly averaged.
     """
 
     start_time = time.time()
@@ -289,13 +288,13 @@ def plot_data(sdate, edate, stationfile, data_type, save, plotdata, specify_ma):
 
         if Save_Flag:
             with pd.ExcelWriter(
-                os.path.join(Outputspace, "MA_discrete_timeseries.xlsx")
+                    os.path.join(Outputspace, "MA_discrete_timeseries.xlsx")
             ) as writer:
                 for variable in file_name_o_discrete:
                     MA_datasets_discrete[variable].to_excel(writer, sheet_name=variable)
 
             with pd.ExcelWriter(
-                os.path.join(Outputspace, "discrete_timeseries.xlsx")
+                    os.path.join(Outputspace, "discrete_timeseries.xlsx")
             ) as writer:
                 for variable in file_name_o_discrete:
                     datasets_discrete[variable].to_excel(writer, sheet_name=variable)
@@ -412,7 +411,7 @@ def plot_data(sdate, edate, stationfile, data_type, save, plotdata, specify_ma):
 ### Functions ####################################################################################################
 # Make a nested datasets for continuous data
 def create_nested_datasets(
-    file_name, file_name_o, file_suffix, MA_window, threshold1, Discrete=False
+        file_name, file_name_o, file_suffix, MA_window, threshold1, Discrete=False
 ):
     global start_date, end_date  # Refer to the global variables
     datasets = {}  # monthly average dataset
@@ -472,7 +471,6 @@ def create_nested_datasets(
 
 
 def create_dataframe(file_name, date_column="Date"):
-
     # Use the appropriate pandas function to read the file
     if ".xlsx" in file_name:
         try:
@@ -516,15 +514,15 @@ def sub_dataframe_gen(sub_name, file_name):
 
 # Plot CRMS data
 def plot_CRMS(
-    datasets_continous,
-    datasets_discrete,
-    file_name_o,
-    Data_type,
-    plot_period,
-    plot_space,
-    plot_range=None,
-    station=None,
-    photo_dir=None,
+        datasets_continous,
+        datasets_discrete,
+        file_name_o,
+        Data_type,
+        plot_period,
+        plot_space,
+        plot_range=None,
+        station=None,
+        photo_dir=None,
 ):
     """
     General function to plot water level, hydroperiod, inundation depth, salinity, and other environmental data.
@@ -599,10 +597,10 @@ def plot_CRMS(
     # Calculate data length
     if Data_type == "H":
         data_length = (end_date - start_date).total_seconds() / (
-            3600 * 24
+                3600 * 24
         )  # Data length in days
         if data_length <= 1:
-            print(f"Data Length: {data_length*24} hours")
+            print(f"Data Length: {data_length * 24} hours")
         else:
             print(f"Data Length: {data_length} days")
     elif Data_type == "D":
@@ -614,7 +612,7 @@ def plot_CRMS(
 
     # Set x-axis date formatter based on the data length
     assert (
-        data_length > 0
+            data_length > 0
     ), "Invalid data period. The end date must be after the start date."
 
     # Set x-axis date formatter and locator based on the data length and type
@@ -984,7 +982,6 @@ def plot_CRMS(
     plt.close()
 
     return output
-
 
 # def data_analysis():
 
