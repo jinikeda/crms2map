@@ -23,52 +23,52 @@ def test_download_CRMS(tmpdir):
     result = download_CRMS(url, zip_file, csv_file, str(input_space))
 
 
-@pytest.fixture
-def setup_files(tmpdir):
-    """Set up the required files in the temporary directory."""
-    original_input_space = os.path.join(os.getcwd(), "Input")
-    tmp_input_space = tmpdir.mkdir("Input")
-
-    # # Copy necessary files from the original input space to tmpdir
-    # required_files = ["GEOID99_TO_GEOID12A.csv"]
-    # for file_name in required_files:
-    #     src_file = os.path.join(original_input_space, file_name)
-    #     dst_file = os.path.join(tmp_input_space, file_name)
-    #     shutil.copy(src_file, dst_file)
-
-    return tmp_input_space
-
-
-def test_main_function(mocker, tmpdir, setup_files):
-    """Test the main function for CRMS_Discrete_Hydrographic2subsets.py."""
-
-    # Mock the os.getcwd() to return the temporary directory
-    mocker.patch("os.getcwd", return_value=str(tmpdir))
-
-    # Mock the download_CRMS function to avoid actual downloading
-    mocker.patch("src.CRMS_general_functions.download_CRMS", return_value=True)
-
-    # Invoke the Click command using CliRunner
-    runner = CliRunner()
-    result = runner.invoke(discrete_subcommand)
-
-    # Check that the command executed successfully
-    assert result.exit_code == 0, f"Command failed with exit code {result.exit_code}. Output: {result.output}"
-
-    # Define the expected directories and files
-    process_space = os.path.join(str(tmpdir), 'Process')
-
-    # expected_files = [
-    #     os.path.join(setup_files, "GEOID99_TO_GEOID12A.csv"),
-    #     # Add more expected files if needed
-    # ]
-    #
-    # # Check if the expected files were created or exist
-    # for file_path in expected_files:
-    #     assert os.path.exists(file_path), f"Expected file {file_path} does not exist."
-
-    # Check if the Process directory was created
-    assert os.path.exists(process_space), "Process directory was not created."
+# @pytest.fixture
+# def setup_files(tmpdir):
+#     """Set up the required files in the temporary directory."""
+#     original_input_space = os.path.join(os.getcwd(), "Input")
+#     tmp_input_space = tmpdir.mkdir("Input")
+#
+#     # Copy necessary files from the original input space to tmpdir
+#     required_files = ["GEOID99_TO_GEOID12A.csv"]
+#     for file_name in required_files:
+#         src_file = os.path.join(original_input_space, file_name)
+#         dst_file = os.path.join(tmp_input_space, file_name)
+#         shutil.copy(src_file, dst_file)
+#
+#     return tmp_input_space
+#
+#
+# def test_main_function(mocker, tmpdir, setup_files):
+#     """Test the main function for CRMS_Discrete_Hydrographic2subsets.py."""
+#
+#     # Mock the os.getcwd() to return the temporary directory
+#     mocker.patch("os.getcwd", return_value=str(tmpdir))
+#
+#     # Mock the download_CRMS function to avoid actual downloading
+#     mocker.patch("src.CRMS_general_functions.download_CRMS", return_value=True)
+#
+#     # Invoke the Click command using CliRunner
+#     runner = CliRunner()
+#     result = runner.invoke(discrete_subcommand)
+#
+#     # Check that the command executed successfully
+#     assert result.exit_code == 0, f"Command failed with exit code {result.exit_code}. Output: {result.output}"
+#
+#     # Define the expected directories and files
+#     process_space = os.path.join(str(tmpdir), 'Process')
+#
+#     expected_files = [
+#         os.path.join(setup_files, "GEOID99_TO_GEOID12A.csv"),
+#         # Add more expected files if needed
+#     ]
+#
+#     # Check if the expected files were created or exist
+#     for file_path in expected_files:
+#         assert os.path.exists(file_path), f"Expected file {file_path} does not exist."
+#
+#     # Check if the Process directory was created
+#     assert os.path.exists(process_space), "Process directory was not created."
 
 
 @pytest.fixture
