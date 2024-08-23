@@ -29,12 +29,12 @@ def setup_files(tmpdir):
     original_input_space = os.path.join(os.getcwd(), "Input")
     tmp_input_space = tmpdir.mkdir("Input")
 
-    # Copy necessary files from the original input space to tmpdir
-    required_files = ["GEOID99_TO_GEOID12A.csv"]
-    for file_name in required_files:
-        src_file = os.path.join(original_input_space, file_name)
-        dst_file = os.path.join(tmp_input_space, file_name)
-        shutil.copy(src_file, dst_file)
+    # # Copy necessary files from the original input space to tmpdir
+    # required_files = ["GEOID99_TO_GEOID12A.csv"]
+    # for file_name in required_files:
+    #     src_file = os.path.join(original_input_space, file_name)
+    #     dst_file = os.path.join(tmp_input_space, file_name)
+    #     shutil.copy(src_file, dst_file)
 
     return tmp_input_space
 
