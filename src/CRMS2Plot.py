@@ -978,7 +978,7 @@ def plot_CRMS(
     if isinstance(station, list):
         ax.legend()
     plt.savefig(output, dpi=600, bbox_inches="tight")
-    plt.show()
+    # plt.show()
     plt.close()
 
     return output
