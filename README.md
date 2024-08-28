@@ -3,7 +3,7 @@ Data analytical and mapping tools for the Louisiana Coastal Reference Monitoring
 
 ## §1. Install virtual conda env and activation
 Type: ***conda env create -f env.yml*** \
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; black is an uncompromising Python code formatter, flack8 is a linter to check code, and pytest and mock are code testing tools. These packages are not mandatory for running CRMS2Map.  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; black is an uncompromising Python code formatter, flake8 is a linter to check code, and pytest and mock are code testing tools. These packages are not mandatory for running CRMS2Map.  
 
 ## §2. Activate virtual env
 Type: ***conda activate CRMS_env***
