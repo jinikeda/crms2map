@@ -17,7 +17,7 @@ install_requires = [
     "geopandas",
     "rasterio",
     "scipy",
-    "matplotlib",
+    "matplotlib-base",
     "basemap",
     "rioxarray",
     "click",
