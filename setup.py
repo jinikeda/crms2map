@@ -10,7 +10,6 @@ long_description = open("README.md").read()
 url = "https://github.com/jinikeda/CRMS2Map"
 author = "Jin Ikeda"
 license_type = "MIT License"
-install_requires = []
 install_requires = [
     "gdal",
     "numpy",
@@ -21,6 +20,7 @@ install_requires = [
     "matplotlib",
     "basemap",
     "rioxarray",
+    "click",
 ]
 
 # ## Determine the platform and make platform-specific adjustments
