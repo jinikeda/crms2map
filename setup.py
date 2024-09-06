@@ -18,6 +18,7 @@ install_requires = [
     "rasterio",
     "scipy",
     "matplotlib-base",
+    "seaborn",
     "basemap",
     "rioxarray",
     "click",
