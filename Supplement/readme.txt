@@ -1,1 +1,1 @@
-CRMS_data should be stored in CRMS2Map/Output folder
+This file is developed for monthly data analysis. CRMS datasets should be stored in the "CRMS2Map/Output" folder
