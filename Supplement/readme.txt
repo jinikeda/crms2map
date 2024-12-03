@@ -1,0 +1,1 @@
+CRMS_data should be stored in CRMS2Map/Output folder
