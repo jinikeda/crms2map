@@ -71,4 +71,4 @@ This folder provides data processing codes and additional datasets for wetland h
 
 ### Release history
 CRMS2Map v1.0: First release on Aug/08/2024 (Only release CRMS2Plot. **Interpolation and mapping tools** will be released after paper publication) \
-CRMS2Map v1.0.1: Modified Geoid system and added supplemental analysis code on Dec/06/2024
+CRMS2Map v1.1: Modified Geoid system and added supplemental analysis code on Dec/06/2024
