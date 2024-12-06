@@ -201,7 +201,7 @@ def plot_data(sdate, edate, stationfile, data_type, save, plotdata, specify_ma):
         Inputspace, f"CRMS_Surface_salinity_2006_2024_{data_suffix}"
     )
     file_name3 = os.path.join(
-        Inputspace, f"CRMS_Geoid99_to_Geoid12a_offsets_2006_2024_{data_suffix}"
+        Inputspace, f"CRMS_Geoid99_to_Geoid12b_offsets_2006_2024_{data_suffix}"
     )
     file_name4 = os.path.join(
         Inputspace, f"CRMS_Water_Elevation_to_Marsh_2006_2024_wdepth_{data_suffix}"
