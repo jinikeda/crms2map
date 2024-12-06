@@ -4,8 +4,8 @@
 # This file is developed for monthly data analysis. However, it includes hourly and daily analysis capabilities.
 # Developed by the Center for Computation & Technology at Louisiana State University (LSU).
 # Developer: Jin Ikeda
-# Last modified Dec 3, 2024
-from jinja2.nodes import Output
+# Last modified Dec 5, 2024
+
 
 ### 1.1 Import modules ###
 import numpy as np
@@ -473,8 +473,6 @@ def point_shapefiles_filter(point_file, drop_list=[]):
 print('Data_anaysis')
 ######################################################################
 # The target working directory
-
-# Specify working folder
 Workspace = os.getcwd()  # Go up to the parent directory
 Parentspace = os.path.dirname(os.getcwd())  # Go up to the parent directory
 
