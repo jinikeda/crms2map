@@ -560,10 +560,14 @@ file_name2 = "CRMS_Surface_salinity_2006_2024_Mdata"
 file_name3 = "CRMS_Geoid99_to_Geoid12b_offsets_2006_2024_Mdata"
 file_name4 = "CRMS_Water_Elevation_to_Marsh_2006_2024_wdepth_Mdata"
 file_name5 = "CRMS_Water_Elevation_to_Marsh_2006_2024_wd_Mdata"
+file_name6 = "CRMS_Geoid99_to_Geoid12b_offsets_2006_2024_Mdata"  # The following three files don't use most of case
+file_name7 = "CRMS_Water_Elevation_to_Marsh_2006_2024_wdepth_Mdata"  # This file is optinal for static SLR case
+file_name8 = "CRMS_Water_Elevation_to_Marsh_2006_2024_wd_Mdata"  # This file is optinal for static SLR case
+
 # file_name6='CRMS_Geoid99_to_Geoid12a_offsets_SLR2050_Mdata'
-file_name6 = "CRMS_Geoid99_to_Geoid12b_offsets_2006_2024_Mdata"  # Thi file don't use most of case
-file_name7 = "CRMS_Water_Elevation_to_Marsh_2006_2024_wdepth_SLR2050_Mdata"  # This file is optinal for static SLR case
-file_name8 = "CRMS_Water_Elevation_to_Marsh_2006_2024_wd_SLR2050_Mdata"  # This file is optinal for static SLR case
+# file_name7 = "CRMS_Water_Elevation_to_Marsh_2006_2024_wdepth_SLR2050_Mdata"  # This file is optinal for static SLR case
+# file_name8 = "CRMS_Water_Elevation_to_Marsh_2006_2024_wd_SLR2050_Mdata"  # This file is optinal for static SLR case
+
 
 file_name = [file_name1, file_name2, file_name3, file_name4, file_name5, file_name6, file_name7, file_name8]
 file_name_o = ["Temp", "Salinity", "WL", "W_depth", "W_HP", "WL_SLR", "W_depth_SLR", "W_HP_SLR"]
