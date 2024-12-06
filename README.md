@@ -1,5 +1,6 @@
 # CRMS2Map
 Data analytical and mapping tools for the Louisiana Coastal Reference Monitoring System (CRMS) Hydrographic Data from https://cims.coastal.la.gov/monitoring-data/
+### CRMS Water Level Data is used Geoid12B after Oct 2, 2023 (no more Geoid12A)
 
 ## §1. Install virtual conda env and activation
 Type: ***conda env create -f env.yml*** \
@@ -67,3 +68,4 @@ Type: ***pip install -e .*** \
 
 ### Release history
 CRMS2Map v1.0: First release on Aug/08/2024 (Only release CRMS2Plot. Interpolation and mapping tools will be released after paper publication)
+CRMS2Map v1.0.1: Add supplemental analysis code on Dec/06/2024
