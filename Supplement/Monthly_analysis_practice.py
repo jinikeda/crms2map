@@ -24,7 +24,9 @@ import matplotlib.cm as cm
 import seaborn as sns
 from matplotlib.ticker import (AutoMinorLocator, MultipleLocator)
 import itertools
-import folium
+
+
+# import folium
 
 
 ### Functions ####################################################################################################
@@ -176,6 +178,16 @@ def process_files(file_names, sort_basin, label):
     return datasets
 
 
+# Function to sort files by matching them to the variable order
+def sort_files_by_order(file_list, order_list):
+    sorted_files = []
+    for var in order_list:
+        for file in file_list:
+            if var in file:
+                sorted_files.append(file)
+    return sorted_files
+
+
 def plot_CRMS(datasets, MA_datasets, file_name_o,
               plot_params):  # ["Temp","Salinity","WL","W_depth","W_HP","WL_SLR","W_depth_SLR","W_HP_SLR"]
     # plot_params [y_min, y_max, y_space]
@@ -250,30 +262,30 @@ def calculate_trends(df_MA, trend_columns, subdomain=False, sort_domain_list=Non
     return trends
 
 
-def explore_map(polygon, point, Community):
-    base = polygon.explore(
-        column="BASIN",
-        scheme="naturalbreaks",
-        legend=True,
-        k=10,
-        tooltip=False,
-        legend_kwds=dict(colorbar=False),
-        name="Basin",
-    )
-
-    point.explore(
-        m=base,
-        color="red" if Community == "station" else None,
-        column=None if Community == "station" else Community,
-        scheme=None if Community == "station" else "naturalbreaks",
-        legend=True,
-        marker_kwds=dict(radius=5, fill=True),
-        name=Community,
-    )
-
-    folium.LayerControl().add_to(base)
-
-    return base
+# def explore_map(polygon, point, Community):
+#     base = polygon.explore(
+#         column="BASIN",
+#         scheme="naturalbreaks",
+#         legend=True,
+#         k=10,
+#         tooltip=False,
+#         legend_kwds=dict(colorbar=False),
+#         name="Basin",
+#     )
+#
+#     point.explore(
+#         m=base,
+#         color="red" if Community == "station" else None,
+#         column=None if Community == "station" else Community,
+#         scheme=None if Community == "station" else "naturalbreaks",
+#         legend=True,
+#         marker_kwds=dict(radius=5, fill=True),
+#         name=Community,
+#     )
+#
+#     folium.LayerControl().add_to(base)
+#
+#     return base
 
 
 def create_subdomain_index(grouped_data, list_values):
@@ -358,7 +370,11 @@ def create_subdomain_correlation(datasets, file_name_o, sort_list, SST_basin, Q_
             df['Q'] = Q_data.query('index >= @start_date and index <= @end_date')['cms']
         else:
             df['Q'] = SST_basin['AR_Q']
-        df['Prcp'] = subdomain_prcp.query('index >= @start_date and index <= @end_date')[i].values
+        # Align the indices before assignment
+        prcp_values = subdomain_prcp.query('index >= @start_date and index <= @end_date')[i].values
+        prcp_values = prcp_values[:len(df)]  # Ensure the lengths match
+        df['Prcp'] = prcp_values
+        # df['Prcp'] = subdomain_prcp.query('index >= @start_date and index <= @end_date')[i].values
         df['U10'] = SST_basin['U10']
         df['V10'] = SST_basin['V10']
         df = df.rename(columns={'Temp': 'CRMS ST'})  # Change column name
@@ -483,7 +499,7 @@ os.chdir(Workspace)
 ### Parameters ###########################################################
 start_date = '2008-01-01'  # 'yyyy-mm-dd'
 start_date_climate = '1981-01-01'  # 'yyyy-mm-dd'
-end_date = '2023-01-01'  # 'yyyy-mm-dd'
+end_date = '2022-12-31'  # 'yyyy-mm-dd'
 threshold1 = 200  # Delete columns where 'num_station' is lower than the threshold for continuous data
 threshold2 = int(threshold1 / 2)  # Delete columns where 'num_station' is lower than the threshold for discrete data
 
@@ -543,11 +559,11 @@ file_suffix = ".csv"
 ### Open continuous files
 file_name1 = "CRMS_Water_Temp_2006_2024_Mdata"
 file_name2 = "CRMS_Surface_salinity_2006_2024_Mdata"
-file_name3 = "CRMS_Geoid99_to_Geoid12a_offsets_2006_2024_Mdata"
+file_name3 = "CRMS_Geoid99_to_Geoid12b_offsets_2006_2024_Mdata"
 file_name4 = "CRMS_Water_Elevation_to_Marsh_2006_2024_wdepth_Mdata"
 file_name5 = "CRMS_Water_Elevation_to_Marsh_2006_2024_wd_Mdata"
 # file_name6='CRMS_Geoid99_to_Geoid12a_offsets_SLR2050_Mdata'
-file_name6 = "CRMS_Geoid99_to_Geoid12a_offsets_2006_2024_Mdata"  # Thi file don't use most of case
+file_name6 = "CRMS_Geoid99_to_Geoid12b_offsets_2006_2024_Mdata"  # Thi file don't use most of case
 file_name7 = "CRMS_Water_Elevation_to_Marsh_2006_2024_wdepth_SLR2050_Mdata"  # This file is optinal for static SLR case
 file_name8 = "CRMS_Water_Elevation_to_Marsh_2006_2024_wd_SLR2050_Mdata"  # This file is optinal for static SLR case
 
@@ -592,7 +608,7 @@ CS_Q = create_dataframe(CS_Q_file, 'Date')
 
 # Create a nested dataset for continuous data between 2008-2022
 datasets, MA_datasets = create_nested_datasets(file_name, file_name_o, file_suffix, threshold1, Discrete=False,
-                                               drop_columns=[], CRMSdataspace=Outputspace)
+                                               drop_columns=[], CRMSdataspace=Inputspace)
 
 MA_datasets["WL"].to_excel(
     'MA_timeseris_WL.xlsx')  # Save the moving average dataset for analyzing a spatial mapping paper
@@ -610,7 +626,7 @@ print("HP_SLR =", datasets["W_HP_SLR"].mean().mean(), ", Depth_SLR = ", datasets
 # Create a nested dataset for discrete data between 2008-2022
 datasets_discrete, MA_datasets_discrete = create_nested_datasets(file_name_discrete, file_name_o_discrete, file_suffix,
                                                                  threshold2, Discrete=True, drop_columns=[],
-                                                                 CRMSdataspace=Outputspace)
+                                                                 CRMSdataspace=Inputspace)
 
 MA_datasets_discrete["Pore_10"].to_csv('Pore_10_MA.csv')
 datasets_discrete["Pore_10"].to_csv('Pore_10.csv')
@@ -827,7 +843,8 @@ SST.head()
 SST.to_excel('monthly_median_for_correlation.xlsx')
 #
 SST = SST.rename(columns={'SST': 'GoM SST',
-                          'Temp': 'CRMS ST', 'W_HP': 'HP', 'W_depth': 'ID'})  # Change column name
+                          'Temp': 'CRMS ST', 'W_HP': 'HP',
+                          'W_depth': 'ID'})  # Change column name when you run on linux no space
 SST_plot = SST.copy()
 SST_plot.drop(['UV', 'ID'], axis=1, inplace=True)
 SST_plot = SST_plot.query('index >= @start_date and index <= @end_date')
@@ -931,32 +948,44 @@ MA_subsets = create_subdomain_datasets(datasets, file_name_o, basin_index, sort_
 #############################################
 # Make median datasets for each domain and variable
 #############################################
+# Define file paths
 file1 = Subbasinspace + '/*_median.*csv'
+file2 = Subbasinspace + '/*_median_MA.*csv'
 
+# Initialize lists for file names
 file_sub_name1 = []
 file_sub_name_SLR = []
-
-for sub_file in glob.glob(file1):
-    if "_SLR_" not in sub_file:
-        print(sub_file)
-        file_sub_name1.append(sub_file)
-    else:
-        print(sub_file)
-        file_sub_name_SLR.append(sub_file)
-
-file2 = Subbasinspace + '/*_median_MA.*csv'
 file_sub_name2 = []
 
+# Define the desired order for variables
+sorted_file_name_o = ['Salinity', 'Temp', 'WL', 'W_depth', 'W_HP']
+
+# Process and sort file1
+for sub_file in glob.glob(file1):
+    if "_SLR_" not in sub_file:
+        file_sub_name1.append(sub_file)
+    else:
+        file_sub_name_SLR.append(sub_file)
+
+# Sort file_sub_name1 by the specified variable order
+file_sub_name1 = sort_files_by_order(file_sub_name1, sorted_file_name_o)
+
+# Process file2 (for *_median_MA.csv)
 for sub_file in glob.glob(file2):
     if "_SLR_" not in sub_file:
-        print(sub_file)
         file_sub_name2.append(sub_file)
 
-sorted_file_name_o = ['Salinity', 'Temp', 'WL', 'W_depth', 'W_HP']  # need to reorder the variables
-print(file_sub_name1)
+# Sort file_sub_name2 by the specified variable order
+file_sub_name2 = sort_files_by_order(file_sub_name2, sorted_file_name_o)
 
+# Print the sorted file names
+print(file_sub_name1)
+print(file_sub_name_SLR)
+print(file_sub_name2)
+
+# Generate subdatasets
 subdatasets = sub_dataframe_gen(file_sub_name1, sorted_file_name_o)
-subdatasets_SLR = sub_dataframe_gen(file_sub_name_SLR, file_name_o[-3:])
+subdatasets_SLR = sub_dataframe_gen(file_sub_name_SLR, sorted_file_name_o[-3:])
 MA_subdatasets = sub_dataframe_gen(file_sub_name2, sorted_file_name_o)
 
 #############################################
@@ -1260,25 +1289,48 @@ MA_subsets_vegetation = create_subdomain_datasets(datasets, file_name_o, vegetat
 #############################################
 # Make median datasets for each vegetation and variable
 #############################################
+# Define file paths
 file1 = Submarshspace + '/*_median.*csv'
-file_sub_name1 = []
-
-for sub_file in glob.glob(file1):
-    if "_SLR_" not in sub_file:
-        print(sub_file)
-        file_sub_name1.append(sub_file)
-
 file2 = Submarshspace + '/*_median_MA.*csv'
+
+# Initialize lists for file names
+file_sub_name1 = []
 file_sub_name2 = []
 
+# Define the desired order for variables
+sorted_file_name_o = ['Salinity', 'Temp', 'WL', 'W_depth', 'W_HP']
+
+
+# Function to sort files by matching them to the variable order
+def sort_files_by_order(file_list, order_list):
+    sorted_files = []
+    for var in order_list:
+        for file in file_list:
+            if var in file:
+                sorted_files.append(file)
+    return sorted_files
+
+
+# Process file1 and collect non-SLR files
+for sub_file in glob.glob(file1):
+    if "_SLR_" not in sub_file:
+        file_sub_name1.append(sub_file)
+
+# Sort file_sub_name1 by the specified variable order
+file_sub_name1 = sort_files_by_order(file_sub_name1, sorted_file_name_o)
+
+# Process file2 (for *_median_MA.csv) and collect non-SLR files
 for sub_file in glob.glob(file2):
     if "_SLR_" not in sub_file:
-        print(sub_file)
         file_sub_name2.append(sub_file)
 
-sorted_file_name_o = ['Salinity', 'Temp', 'WL', 'W_depth', 'W_HP']  # need to reorder the variables
+# Sort file_sub_name2 by the specified variable order
+file_sub_name2 = sort_files_by_order(file_sub_name2, sorted_file_name_o)
+
+# Print the sorted variable order (optional for verification)
 print(sorted_file_name_o)
 
+# Generate subdatasets for vegetation data
 subdatasets_vegetation = sub_dataframe_gen(file_sub_name1, sorted_file_name_o)
 MA_subdatasets_vegetation = sub_dataframe_gen(file_sub_name2, sorted_file_name_o)
 
@@ -1400,7 +1452,7 @@ for i, j in enumerate(station_prcp.columns):
         pass
     else:
         station_prcp[j] = Basin_prcp[community_basin]
-print(station_prcp)
+print(station_prcp, station_prcp.shape)
 
 # Calculate community prep
 community_prcp = pd.DataFrame(columns=sort_community, index=Basin_prcp.index)
@@ -1414,7 +1466,7 @@ grouped = Basin_community.groupby('Community')
 for group, indices in vegetation_index["Salinity"].items():
     # print(f"Group '{group}': {indices}")
     community_prcp[group] = station_prcp.loc[:, indices].mean(axis=1, skipna=True)  # mean the values of each group
-print(community_prcp)
+print(community_prcp, community_prcp.shape)
 
 #############################################
 # community level correlation between CRMS and Climate driver
@@ -1433,7 +1485,7 @@ fig.subplots_adjust(wspace=0.20, hspace=0.2)
 
 datasets_plot_lists = [MA_subdatasets_vegetation, MA_subdatasets_vegetation, MA_subdatasets, MA_subdatasets]
 color_lists = [color_palette_vegetation, color_palette_vegetation, color_palette, color_palette]
-y_variables = ['Salinity', 'WL', 'Salinity', 'WL']
+y_variables = ['WL', 'Salinity', 'WL', 'Salinity']
 types = [sort_community, sort_community, sort_basin, sort_basin]
 legend_locs = ['upper center', 'upper center', 'upper center', 'upper left']
 text_list = ['(A-1)', '(B-1)', '(A-2)', '(B-2)']
@@ -1458,8 +1510,8 @@ for k, (dataset, color_list, y_variable, type, legend_loc) in enumerate(
             ax.set_ylabel(u'Temp [℃]')
         elif y_variable == 'WL':
             ax.set_ylabel(r'$\xi$ [m,NAVD88]')
-            ax.set_ylim([0, 1.0])
-            major_ticks = np.arange(0, 1.1, 0.5)
+            ax.set_ylim([-0.1, 1.1])
+            major_ticks = np.arange(-0.1, 1.11, 0.5)
         elif y_variable == 'W_depth':
             ax.set_ylabel('$\it{h}$')
         elif y_variable == 'W_HP':

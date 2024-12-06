@@ -3,7 +3,7 @@
 # CRMS_Continuous_Hydrographic2subsets
 # Developed by the Center for Computation & Technology and Center for Coastal Ecosystem Design Studio at Louisiana State University (LSU).
 # Developer: Jin Ikeda, Shu Gao, and Christopher E. Kees
-# Last modified Aug 14, 2024
+# Last modified Dec 4, 2024
 
 from src.CRMS_general_functions import *
 
@@ -68,7 +68,7 @@ def continuous_subcommand():
     print("Downloaded an original dataset")
 
     # Manually downloaded the offset conversion file
-    offsets_name = "GEOID99_TO_GEOID12A"
+    offsets_name = "GEOID99_TO_GEOID12B"
 
     file = file_name + file_suffix
     offsets_file = offsets_name + file_suffix
@@ -191,11 +191,11 @@ def continuous_subcommand():
     )
 
     ####### Additional modification #######
-    print("Modify Geoid99 to Geoid12a for CRMS_Water_Elevation_to_Datum.csv")
+    print("Modify Geoid99 to Geoid12a/b for CRMS_Water_Elevation_to_Datum.csv")
 
     # Extract rows with Station IDs including "-H" which is Hydrographic hourly
     offsets_hydrographic = offsets.loc[
-                           :, offsets.columns.str.contains("Date|-H")
+                           :, offsets.columns.str.contains("Date|-H01")
                            ].copy()
     offsets_hydrographic.shape
     offsets_hydrographic.index = pd.to_datetime(offsets.Date)
@@ -221,16 +221,17 @@ def continuous_subcommand():
     # Concentrate (merge) dataframes
     merged_df = pd.concat([offsets_hydrographic, pivoted_W2d], axis=0)
     merged_df.head(5)
+    merged_df.to_csv(os.path.join(Processspace, "check_merged_df.csv"))
 
     # Drop columns where row 1 (offset value) is NaN
     offset_CRMSw2d = merged_df.loc[:, ~merged_df.iloc[0].isna()]
     offset_CRMSw2d.head(5)
 
-    # Get the row number of Geoid12A start day
+    # Get the row number of Geoid12A/B start day
     geoid_row = offset_CRMSw2d.index.get_loc(pd.Timestamp(year=2013, month=10, day=1))
 
     # Modify the Geoid difference
-    # get the row number of Geoid12A start day
+    # get the row number of Geoid12A/B start day
     geoid_row = offset_CRMSw2d.index.get_loc(pd.Timestamp(year=2013, month=10, day=1))
     print("Before adjustment", offset_CRMSw2d.iloc[geoid_row - 3: geoid_row + 3, :])
 
@@ -247,7 +248,7 @@ def continuous_subcommand():
     # offset_CRMSw2d.head(5)
 
     # Save a dataset (CSV)
-    save_name = os.path.join(Inputspace, "CRMS_Geoid99_to_Geoid12a_offsets.csv")
+    save_name = os.path.join(Inputspace, "CRMS_Geoid99_to_Geoid12b_offsets.csv")
     offset_CRMSw2d.to_csv(save_name)
 
     # Calculate the elapsed time

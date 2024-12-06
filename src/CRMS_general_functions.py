@@ -23,6 +23,7 @@ from pathlib import Path
 import rasterio
 from osgeo import gdal, ogr, osr
 from osgeo.gdalconst import *
+import requests
 
 gdal.AllRegister()  # Register all of drivers
 ogr.UseExceptions()  # Use exceptions for errors
@@ -32,28 +33,44 @@ ogr.UseExceptions()  # Use exceptions for errors
 # y_variable and date_style for data processing
 ##########################################################################
 def download_CRMS(url, zip_file, csv_file, folder_path):
+    """
+    Downloads and extracts CRMS data files.
+
+    Parameters:
+        url (str): URL of the file to download.
+        zip_file (str): Path to save the downloaded zip file.
+        csv_file (str): Name of the CSV file to extract or clean.
+        folder_path (str): Directory to save extracted files.
+    """
+    # Prepare the CSV file path
+    csv_file_path = os.path.join(folder_path, csv_file)
+
     # Remove the existing CSV file if it exists
-    csv_file = os.path.join(folder_path, csv_file)
-    if os.path.exists(csv_file):
-        os.remove(csv_file)
+    if os.path.exists(csv_file_path):
+        print(f"Removing existing file: {csv_file_path}")
+        os.remove(csv_file_path)
 
-    # Use wget to download the file
+    # Download the file using wget or fallback to requests
     try:
-        os.system(f"wget {url}")
-        print("Downloaded an original dataset on linux")
+        print("Attempting to download the file using wget...")
+        wget_command = f"wget -O {zip_file} {url}"
+        result = os.system(wget_command)
 
-        import requests
-
-        print(
-            "wget command is not recognized on your system (e.g, Windows). So, use another method.."
-        )
-        response = requests.get(url)
-        with open(csv_file, "wb") as f:
-            f.write(response.content)
-        print("Downloaded an original dataset on windows")
-
-    except BaseException:
-        print("failed to download the file")
+        if result == 0:  # Check if wget executed successfully
+            print(f"File successfully downloaded using wget: {zip_file}")
+        else:
+            raise Exception("wget command failed. Switching to requests.")
+    except Exception as e:
+        print(f"wget failed with error: {e}. Attempting to download using requests...")
+        try:
+            response = requests.get(url, stream=True)
+            response.raise_for_status()  # Check for HTTP errors
+            with open(csv_file, "wb") as f:
+                f.write(response.content)
+            print(f"File successfully downloaded using requests: {zip_file}")
+        except Exception as req_error:
+            print(f"Failed to download the file using requests. Error: {req_error}")
+            raise RuntimeError("File download failed completely.") from req_error
 
     # Use zipfile to extract the zip file
     with zipfile.ZipFile(zip_file, "r") as zip_ref:
@@ -68,7 +85,7 @@ def download_CRMS(url, zip_file, csv_file, folder_path):
 def get_CRMS_file(Data):
     data_to_filename = {
         1: "CRMS_Surface_salinity.csv",
-        2: "CRMS_Geoid99_to_Geoid12a_offsets.csv",
+        2: "CRMS_Geoid99_to_Geoid12b_offsets.csv",
         3: "CRMS_Water_Elevation_to_Marsh.csv",
         4: "CRMS_Water_Temp.csv",
         5: "Something_wrong",
