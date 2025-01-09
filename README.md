@@ -16,13 +16,13 @@ Type: ***pip install -e .*** \
 ## Contents of the package
 ### Step 1. Auto-retrieve the original datasets
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Hydrographic Hourly Data: Hourly hydrographic data (over 60GB) -> CRMS_Continuous_Hydrographic2subsets.py \
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Hydrographic Hourly Data: Hourly hydrographic data (over 60GB). See, CRMS_Continuous_Hydrographic2subsets.py \
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <mark>**[Caution] Need large memory (RAM >= 32 GB) for processing**</mark> \
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Hydrographic Monthly Data: Monthly hydrographic data (Manually corrected such as pore water salinity) -> CRMS_Discrete_Hydrographic2subsets.py
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Hydrographic Monthly Data: Monthly hydrographic data (Manually corrected such as pore water salinity). See, CRMS_Discrete_Hydrographic2subsets.py
 
 ### Step 2. Resample the retrieved data
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; From step 1, resample hourly, daily, monthly, and yearly -> CRMS2Resample.py
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; From step 1, resample hourly, daily, monthly, and yearly. See, CRMS2Resample.py
 ### Step 3. Plot time series data (optional)    
 
 ## Running submodule in the CRMS2Map package
