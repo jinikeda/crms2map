@@ -69,7 +69,7 @@ Type: ***pip install -e .*** \
 
 ### Supplement 
 This folder provides data processing codes and additional datasets for wetland hydrological analysis (for the details, read readme.txt in the Supplement folder). \
-The **documentation.pdf** contains further datasets background and explanation of CRMS2Map and supplemental analysis.
+The **documentation.pdf** contains further dataset background and explanation of CRMS2Map modules and supplemental analysis.
 
 ### Release history
 CRMS2Map v1.0: First release on Aug/08/2024 (Only release CRMS2Plot. **Interpolation and mapping tools** will be released after paper publication) \
