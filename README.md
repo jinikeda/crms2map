@@ -22,7 +22,8 @@ Type: ***pip install -e .*** \
 
 ### Step 2. Resample the retrieved data
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; From step 1, resample hourly, daily, monthly, and yearly. See src/CRMS2Resample.py
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; From step 1, resample hourly, daily, monthly, and yearly averaged datasets in the Input folder. The processed and output data are also available in each folder. See src/CRMS2Resample.py
+
 ### Step 3. Plot time series data (optional)    
 
 ## Running submodule in the CRMS2Map package
