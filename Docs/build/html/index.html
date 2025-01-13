@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CRMS2Map documentation &mdash; CRMS2Map 0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=837179f8"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            CRMS2Map
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">CRMS2Map documentation</a><ul>
+<li><a class="reference internal" href="#introduction"><strong>Introduction</strong></a></li>
+<li><a class="reference internal" href="#environment-setting"><strong>Environment Setting</strong></a></li>
+<li><a class="reference internal" href="#installation"><strong>Installation</strong></a></li>
+<li><a class="reference internal" href="#datasets"><strong>Datasets</strong></a></li>
+<li><a class="reference internal" href="#usage"><strong>Usage</strong></a><ul>
+<li><a class="reference internal" href="#auto-retrieve-hydrographic-data"><strong>1. Auto-Retrieve Hydrographic Data</strong></a></li>
+<li><a class="reference internal" href="#data-processing-of-hydrographic-data"><strong>2. Data Processing of Hydrographic Data</strong></a></li>
+<li><a class="reference internal" href="#data-visualization-of-hydrographic-data"><strong>3. Data Visualization of Hydrographic Data</strong></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#crms2map-pytest"><strong>CRMS2Map Pytest</strong></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#supplement-analysis"><strong>Supplement Analysis</strong></a><ul>
+<li><a class="reference internal" href="#id3"><strong>Datasets</strong></a><ul>
+<li><a class="reference internal" href="#function-of-monthly-analysis-practice-py"><strong>1. Function of Monthly_analysis_practice.py</strong></a></li>
+<li><a class="reference internal" href="#function-of-bootstrap-regression-analysis-py"><strong>2. Function of Bootstrap_Regression_analysis.py</strong></a></li>
+<li><a class="reference internal" href="#function-of-regression-analysis-plot-py"><strong>3. Function of Regression_analysis_plot.py</strong></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">CRMS2Map</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">CRMS2Map documentation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="crms2map-documentation">
+<h1>CRMS2Map documentation<a class="headerlink" href="#crms2map-documentation" title="Link to this heading"></a></h1>
+<p><strong>Last Modify 01/09/25</strong></p>
+<section id="introduction">
+<span id="id1"></span><h2><strong>Introduction</strong><a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p>CRMS2Map: Data analytical and mapping tools for the Louisiana Coastal
+Reference Monitoring System (CRMS)</p>
+<p>Repository: <a class="reference external" href="https://github.com/jinikeda/crms2map">https://github.com/jinikeda/crms2map</a></p>
+</section>
+<section id="environment-setting">
+<span id="id2"></span><h2><strong>Environment Setting</strong><a class="headerlink" href="#environment-setting" title="Link to this heading"></a></h2>
+<p>See,
+<a class="reference external" href="https://github.com/jinikeda/crms2map/env.yml">https://github.com/jinikeda/crms2map/env.yml</a></p>
+</section>
+<section id="installation">
+<h2><strong>Installation</strong><a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>CRMS2Map</strong>:</p>
+<ul>
+<li><p>Clone the repository from GitHub:</p>
+<ul>
+<li><p>git clone</p></li>
+</ul>
+</li>
+<li><p>Install the required packages:</p>
+<ul>
+<li><p>conda env create -f env.yml</p></li>
+</ul>
+</li>
+<li><p>Activate the environment:</p>
+<ul>
+<li><p>conda activate CRMS_env</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="datasets">
+<h2><strong>Datasets</strong><a class="headerlink" href="#datasets" title="Link to this heading"></a></h2>
+<p>Available data list <a class="reference external" href="https://cims.coastal.la.gov/monitoring-data/">https://cims.coastal.la.gov/monitoring-data/</a></p>
+<p>Bulk downloads: <a class="reference external" href="https://cims.coastal.la.gov/FullTableExports.aspx">https://cims.coastal.la.gov/FullTableExports.aspx</a></p>
+<p>CRMS data list</p>
+<ul class="simple">
+<li><p>Hydrographic Data (Continuous Hydrographic (Hourly), Discrete
+Hydrographic (Monthly)) using bulk download links</p></li>
+<li><p>Coastal Basin (GIS data -&gt; Reference layers -&gt; <strong>Basins</strong>)</p></li>
+</ul>
+<blockquote>
+<div><p>Input/Basin_NAD83.shp (ten coastal domains defined by CPRA)</p>
+<p>Input/Basin_NAD83_Dissolve.shp (merged single domain)</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>Datum conversion for surface water elevation (<strong>Geoid12B</strong> after Oct
+2, 2023. No more Geoid12A data are available)</p></li>
+</ul>
+<blockquote>
+<div><p><a class="reference external" href="https://www.lacoast.gov/chart/Charting.aspx?laf=crms&amp;tab=2">https://www.lacoast.gov/chart/Charting.aspx?laf=crms&amp;tab=2</a></p>
+</div></blockquote>
+<figure class="align-default" id="id4">
+<a class="reference internal image-reference" href="_images/image1.png"><img alt="Geoid12B Datum Conversion" src="_images/image1.png" style="width: 868px; height: 760px;" /></a>
+<figcaption>
+<p><span class="caption-text">Figure Geoid12B Datum Conversion</span><a class="headerlink" href="#id4" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+<section id="usage">
+<h2><strong>Usage</strong><a class="headerlink" href="#usage" title="Link to this heading"></a></h2>
+<p><strong>CRMS2 Map package: Features and Workflow</strong></p>
+<section id="auto-retrieve-hydrographic-data">
+<h3><strong>1. Auto-Retrieve Hydrographic Data</strong><a class="headerlink" href="#auto-retrieve-hydrographic-data" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>CRMS2Map continuous</strong>:</p>
+<ul>
+<li><p>Retrieves and subsets continuous hydrographic data (hourly).</p></li>
+<li><p>Estimated Time: 10 – 20 minutes.</p></li>
+</ul>
+</li>
+<li><p><strong>CRMS2Map discrete</strong>:</p>
+<ul>
+<li><p>Retrieves and subsets discrete hydrographic data (monthly).</p></li>
+<li><p>Estimated Time: ~1 minute.</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="data-processing-of-hydrographic-data">
+<h3><strong>2. Data Processing of Hydrographic Data</strong><a class="headerlink" href="#data-processing-of-hydrographic-data" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>CRMS2Map resample</strong>:</p>
+<ul>
+<li><p>Generates averaged datasets (hourly, daily, monthly, yearly) from
+continuous and discrete hydrographic data.</p></li>
+<li><p>Processed datasets are saved in the “Input” folder.</p></li>
+<li><p>Processed and output data are organized in their respective
+folders for easy access.</p></li>
+<li><p>Estimated Time: ~3 minutes.</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="data-visualization-of-hydrographic-data">
+<h3><strong>3. Data Visualization of Hydrographic Data</strong><a class="headerlink" href="#data-visualization-of-hydrographic-data" title="Link to this heading"></a></h3>
+<ul>
+<li><p><strong>CRMS2Map plot</strong>:</p>
+<ul class="simple">
+<li><p>Creates time-series plots for the user’s specified period.</p></li>
+<li><p>Includes (moving-averaged) datasets for:</p>
+<ul>
+<li><p>Salinity [ppt]</p></li>
+<li><p>Water level [m, NAVD88]</p></li>
+<li><p>Percent time inundation/Hydro period [-]</p></li>
+<li><p>Inundation depth [m]</p></li>
+</ul>
+</li>
+<li><p><strong>Station Specification</strong>:</p>
+<ul>
+<li><p>When the user wants to specify the station(s), of interest,
+update the station_list.txt file located in the parent folder.</p></li>
+</ul>
+</li>
+<li><p><strong>Estimated Time</strong>: ~2 minutes.</p></li>
+</ul>
+<p>option</p>
+<div class="line-block">
+<div class="line">–sdate State date for the data analysis (format: YYYY-MM-DD)
+[Default: “2008-01-01”]</div>
+<div class="line">–edate End date for the data analysis (format:
+YYYY-MM-DD)[Default: “2024-12-31”]</div>
+<div class="line">–staionfile Path to station list file &lt;station_list.txt&gt; (format:
+CRMSxxxx)[Default: None]</div>
+<div class="line">–data_type Data type: hourly(H), daily(D), monthly(M), and
+yearly(Y)[Default: M]</div>
+<div class="line">–save Save as a single (bundled) dataset and MA_datasets. This is
+time-consuming when the user uses high spatial datasets. [Default:
+True]</div>
+<div class="line">–plotdata Plot original data (org) or moving average data
+(MA)[Default: MA]</div>
+<div class="line">–specify_ma [Optional] The user can specify a central moving
+average window size in days. [Default: yearly averaged]</div>
+</div>
+</li>
+</ul>
+</section>
+</section>
+<section id="crms2map-pytest">
+<h2><strong>CRMS2Map Pytest</strong><a class="headerlink" href="#crms2map-pytest" title="Link to this heading"></a></h2>
+<ul>
+<li><p class="rubric" id="teststest-crms-general-functions-py">tests/test_CRMS_general_functions.py</p>
+</li>
+</ul>
+<!-- --><ul class="simple">
+<li><p>Test individual functions used in each submodule (Github Action
+automatically tests the CI/CD pipeline when changing the code).</p></li>
+</ul>
+</section>
+</section>
+<section id="supplement-analysis">
+<h1><strong>Supplement Analysis</strong><a class="headerlink" href="#supplement-analysis" title="Link to this heading"></a></h1>
+<p>(folder: CRMS2Map/Supplement)</p>
+<section id="id3">
+<h2><strong>Datasets</strong><a class="headerlink" href="#id3" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>CRMS station coordinates</strong></p></li>
+</ul>
+<blockquote>
+<div><p>CRMS_Long_Lat.csv</p>
+<p><a class="reference external" href="https://www.lacoast.gov/crms_viewer/Map/CRMSViewer">https://www.lacoast.gov/crms_viewer/Map/CRMSViewer</a> -&gt; Download
+Lat./Long.</p>
+</div></blockquote>
+<figure class="align-default" id="id5">
+<a class="reference internal image-reference" href="_images/image2.png"><img alt="CRMS Lat/Long data" src="_images/image2.png" style="width: 900px; height: 450px;" /></a>
+<figcaption>
+<p><span class="caption-text">Figure CRMS Viewer to download Lat/Long data on CRMS stations.</span><a class="headerlink" href="#id5" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<ul class="simple">
+<li><p><strong>Marsh Vegetation</strong></p></li>
+</ul>
+<blockquote>
+<div><p>(<a class="reference external" href="https://cims.coastal.la.gov/FullTableExports.aspx">https://cims.coastal.la.gov/FullTableExports.aspx</a> -&gt; Full Table
+Exports - CRMS Data Only -&gt; <strong>Marsh Vegetation</strong>)</p>
+<p>Processed CRMS_Long_Lat.csv and CRMS_Marsh_Vegetation.csv to make
+dominant marsh vegetation types and the station’s coastal domains.</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>Location: Data/CRMS_station_Basin_Community.shp</p></li>
+</ul>
+<!-- --><ul class="simple">
+<li><p><strong>Station list for each variable</strong> (Surface_salinity, water
+elevation, temperature, etc)</p></li>
+</ul>
+<!-- --><ul class="simple">
+<li><p>Data/CRMS_stations_Surface_salinity.shp</p></li>
+<li><p>Data/CRMS_stations_Water_Elevation_to_Datum.shp</p></li>
+<li><p>Data/CRMS_stations_Water_Elevation_to_Marsh.shp</p></li>
+<li><p>Data/CRMS_stations_Water_Temp.shp</p></li>
+</ul>
+<!-- --><ul class="simple">
+<li><p><strong>Median monthly climate drivers</strong> (sea surface temperature, river
+flow, precipitation, winds) in Coastal Louisiana (Processed data)</p></li>
+</ul>
+<!-- --><ul class="simple">
+<li><p>Locations: Data/MonthlySST.xlsx</p></li>
+</ul>
+<blockquote>
+<div><p><a class="reference internal" href="_images/image3.png"><img alt="image3" src="_images/image3.png" style="width: 5.60593in; height: 0.784in;" /></a></p>
+<p>Subdomain/community analysis:</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>Data/AR_daily_discharge_since_1970.csv (daily Atchafalaya River
+discharge)</p></li>
+<li><p>Data/CS_discharge_since_2008.csv (daily Calcasieu River discharge)</p></li>
+<li><p>Data/Basin_total_prcp Monthly.xlsx (total precipitation in each
+basin)</p></li>
+</ul>
+<p>For the detailed datasets list, please refer to Table2 on
+<em>“Tempo-spatial variations in water level and salinity in Louisiana
+coastal wetlands over 15 years”</em></p>
+<section id="function-of-monthly-analysis-practice-py">
+<h3><strong>1. Function of Monthly_analysis_practice.py</strong><a class="headerlink" href="#function-of-monthly-analysis-practice-py" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Data Reading and Preparation</p>
+<ul>
+<li><p>Read monthly continuous and discrete hydrographic datasets.</p></li>
+</ul>
+</li>
+<li><p>Data Analysis</p>
+<ul>
+<li><p>Generate 12-month moving average datasets.</p></li>
+<li><p>Examine short- (15 years) and long-term (over 40 years) trends for
+climate driver and CRMS data.</p></li>
+</ul>
+</li>
+<li><p>Data Grouping</p>
+<ul>
+<li><p>Grouped by subdomain and vegetation datasets.</p></li>
+</ul>
+</li>
+<li><p>Data Visualization</p>
+<ul>
+<li><p>Generates visualizations for subdomain and vegetation-specific
+datasets.</p></li>
+</ul>
+</li>
+<li><p>Statistical Analysis</p>
+<ul>
+<li><p>Analyzes correlations between subdomain/vegetation datasets and
+climate drivers.</p></li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<div><p><strong>Outputs</strong>:</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>Plots for subdomains and vegetation datasets (e.g., Photo folder).</p></li>
+<li><p>Display/output statistical results (e.g., Sub_basin/Sub_marsh &gt;
+folders).</p></li>
+</ul>
+</section>
+<section id="function-of-bootstrap-regression-analysis-py">
+<h3><strong>2. Function of Bootstrap_Regression_analysis.py</strong><a class="headerlink" href="#function-of-bootstrap-regression-analysis-py" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Multiple regression models</p>
+<ul>
+<li><p>Automated bootstrap regression analysis using ordinal linear and
+random forest models.</p></li>
+</ul>
+</li>
+<li><p>Statistical Analysis</p>
+<ul>
+<li><p>Evaluate the performance of models.</p></li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<div><p><strong>Outputs</strong>:</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>Statistical results (e.g. bootstrap_Output folder).</p></li>
+</ul>
+</section>
+<section id="function-of-regression-analysis-plot-py">
+<h3><strong>3. Function of Regression_analysis_plot.py</strong><a class="headerlink" href="#function-of-regression-analysis-plot-py" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Data Visualization</p>
+<ul>
+<li><p>Generates a time series of visualizations for each subdomain.</p></li>
+</ul>
+</li>
+<li><p>Statistical Analysis</p>
+<ul>
+<li><p>Generates a summary table of model performance for each subdomain.</p></li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<div><p><strong>Outputs</strong>:</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>Plot a time series of model predictions and comparisons (Photo &gt;
+folder).</p></li>
+<li><p>Generate model performance and statistical results &gt;
+(bootstrap_Output folder).</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Jin Ikeda.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
