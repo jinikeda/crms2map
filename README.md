@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/796869949.svg)](https://doi.org/10.5281/zenodo.14768447)
+
 # CRMS2Map
 Data analytical and mapping tools for the Louisiana Coastal Reference Monitoring System (CRMS) Hydrographic Data from https://cims.coastal.la.gov/monitoring-data/
 ### CRMS Water Level Data is used Geoid12B after Oct 2, 2023 (no more Geoid12A data are available)
