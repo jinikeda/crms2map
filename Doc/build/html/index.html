@@ -52,7 +52,8 @@
 <li><a class="reference internal" href="#usage"><strong>Usage</strong></a><ul>
 <li><a class="reference internal" href="#auto-retrieve-hydrographic-data"><strong>1. Auto-Retrieve Hydrographic Data</strong></a></li>
 <li><a class="reference internal" href="#data-processing-of-hydrographic-data"><strong>2. Data Processing of Hydrographic Data</strong></a></li>
-<li><a class="reference internal" href="#data-visualization-of-hydrographic-data"><strong>3. Data Visualization of Hydrographic Data</strong></a></li>
+<li><a class="reference internal" href="#spatial-interpolation-of-hydrographic-data"><strong>3. Spatial Interpolation of Hydrographic Data</strong></a></li>
+<li><a class="reference internal" href="#data-visualization-of-hydrographic-data"><strong>4. Data Visualization of Hydrographic Data</strong></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#crms2map-pytest"><strong>CRMS2Map Pytest</strong></a></li>
@@ -181,9 +182,9 @@ Hydrographic (Monthly)) using bulk download links</p></li>
 </section>
 <section id="data-processing-of-hydrographic-data">
 <h3><strong>2. Data Processing of Hydrographic Data</strong><a class="headerlink" href="#data-processing-of-hydrographic-data" title="Link to this heading"></a></h3>
-<ul class="simple">
-<li><p><strong>CRMS2Map resample</strong>:</p>
 <ul>
+<li><p><strong>CRMS2Map resample</strong>:</p>
+<ul class="simple">
 <li><p>Generates averaged datasets (hourly, daily, monthly, yearly) from
 continuous and discrete hydrographic data.</p></li>
 <li><p>Processed datasets are saved in the “Input” folder.</p></li>
@@ -191,11 +192,74 @@ continuous and discrete hydrographic data.</p></li>
 folders for easy access.</p></li>
 <li><p>Estimated Time: ~3 minutes.</p></li>
 </ul>
+<p>Options:</p>
 </li>
 </ul>
+<blockquote>
+<div><dl class="option-list">
+<dt><kbd><span class="option">--sdate <var>TEXT</var></span></kbd></dt>
+<dd><p>Start date for the data analysis (format: YYYY-MM-DD)</p>
+</dd>
+<dt><kbd><span class="option">--edate <var>TEXT</var></span></kbd></dt>
+<dd><p>End date for the data analysis (format: YYYY-MM-DD)</p>
+</dd>
+</dl>
+</div></blockquote>
+</section>
+<section id="spatial-interpolation-of-hydrographic-data">
+<h3><strong>3. Spatial Interpolation of Hydrographic Data</strong><a class="headerlink" href="#spatial-interpolation-of-hydrographic-data" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>CRMS2Map interpolate</strong>:</p>
+<ul>
+<li><p>Generates spatial interpolation datasets (GeoTiFF) from
+point-based hydrographic data.</p></li>
+<li><p>Output data are saved in the “Output” folder.</p></li>
+<li><p>Estimated Time: depends on the datasets.</p></li>
+</ul>
+</li>
+</ul>
+<dl>
+<dt>Options:</dt><dd><div class="line-block">
+<div class="line">–data_range TEXT       Start and End year of the datasets (format:
+YYYY_YYYY). Default: 2006_2024 (around 4 months
+before today).  [default: 2006_2024]</div>
+<div class="line">–sdate TEXT            State date for the datasets (format: YYYY-MM-DD)</div>
+<div class="line">–edate TEXT            End date for the datasets (format: YYYY-MM-DD)</div>
+<div class="line">–data_type TEXT        Data type: hourly(H), daily(D), monthly(M), and
+yearly(Y)</div>
+<div class="line">–tstep INTEGER RANGE   Numeric time step for the datasets based on
+‘data_type’.   - If hourly (H): Number of hours
+(e.g., 1, 3, 6, 12)   - If daily (D): Number of days
+(e.g., 1, 7, 30)   - If monthly (M): Number of
+months (e.g., 1, 3, 6, 12)   - If yearly (Y): Number
+of years (e.g., 1, 5, 10) Default: 1  [default: 1;
+1&lt;=x&lt;=1000]</div>
+<div class="line">–data_var TEXT         Specify the dependent variable (e.g., Salinity, WL,
+W_HP, W_depth, Temp).</div>
+<div class="line">–method INTEGER RANGE  Select Interpolation Method: 1: Kriging using
+Pykrige 2: IDW with fixed distance (WhiteboxTools,
+optional: need to install WhiteboxTools)) 3: IDW
+with KDTree (k-nearest neighbors) 4: Random Forest
+Spatial Interpolation with KDTree  [1&lt;=x&lt;=4]</div>
+<div class="line">–KNN INTEGER RANGE     Number of nearest neighbors (recommend 4-6 for the
+best performance with IDW)  [1&lt;=x&lt;=12]</div>
+<div class="line">–inputfile PATH        Alternative input file path (manual input). This
+option is not typically required but can be used for
+manual file selection.</div>
+<div class="line">–geoinfo BOOLEAN       For research purposes only (Not Recommend): Include
+geographic information during Random forest
+interpolation (method=4).This approach may enhance
+spatial accuracy when KNN = 1 or 2 but is not
+required for standard analysis.This approach also
+requires a DEM grid, SPI, and Tave files in the
+Input folder. (For the details, contact us for more
+information).</div>
+</div>
+</dd>
+</dl>
 </section>
 <section id="data-visualization-of-hydrographic-data">
-<h3><strong>3. Data Visualization of Hydrographic Data</strong><a class="headerlink" href="#data-visualization-of-hydrographic-data" title="Link to this heading"></a></h3>
+<h3><strong>4. Data Visualization of Hydrographic Data</strong><a class="headerlink" href="#data-visualization-of-hydrographic-data" title="Link to this heading"></a></h3>
 <ul>
 <li><p><strong>CRMS2Map plot</strong>:</p>
 <ul class="simple">

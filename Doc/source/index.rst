@@ -110,7 +110,60 @@ CRMS data list
 
    -  Estimated Time: ~3 minutes.
 
-**3. Data Visualization of Hydrographic Data**
+   Options:
+  --sdate TEXT  Start date for the data analysis (format: YYYY-MM-DD)
+  --edate TEXT  End date for the data analysis (format: YYYY-MM-DD)
+
+
+**3. Spatial Interpolation of Hydrographic Data**
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  **CRMS2Map interpolate**:
+
+   -  Generates spatial interpolation datasets (GeoTiFF) from
+      point-based hydrographic data.
+
+   -  Output data are saved in the “Output” folder.
+
+   -  Estimated Time: depends on the datasets.
+Options:
+   | --data_range TEXT       Start and End year of the datasets (format:
+                             YYYY_YYYY). Default: 2006_2024 (around 4 months
+                             before today).  [default: 2006_2024]
+   | --sdate TEXT            State date for the datasets (format: YYYY-MM-DD)
+   | --edate TEXT            End date for the datasets (format: YYYY-MM-DD)
+   | --data_type TEXT        Data type: hourly(H), daily(D), monthly(M), and
+                             yearly(Y)
+   | --tstep INTEGER RANGE   Numeric time step for the datasets based on 
+                             'data_type'.   - If hourly (H): Number of hours
+                             (e.g., 1, 3, 6, 12)   - If daily (D): Number of days
+                             (e.g., 1, 7, 30)   - If monthly (M): Number of
+                             months (e.g., 1, 3, 6, 12)   - If yearly (Y): Number
+                             of years (e.g., 1, 5, 10) Default: 1  [default: 1;
+                             1<=x<=1000]
+   | --data_var TEXT         Specify the dependent variable (e.g., Salinity, WL,
+                             W_HP, W_depth, Temp).  
+   | --method INTEGER RANGE  Select Interpolation Method: 1: Kriging using
+                             Pykrige 2: IDW with fixed distance (WhiteboxTools,
+                             optional: need to install WhiteboxTools)) 3: IDW
+                             with KDTree (k-nearest neighbors) 4: Random Forest
+                             Spatial Interpolation with KDTree  [1<=x<=4]  
+   | --KNN INTEGER RANGE     Number of nearest neighbors (recommend 4-6 for the
+                             best performance with IDW)  [1<=x<=12]
+   | --inputfile PATH        Alternative input file path (manual input). This
+                             option is not typically required but can be used for
+                             manual file selection.
+   | --geoinfo BOOLEAN       For research purposes only (Not Recommend): Include
+                             geographic information during Random forest
+                             interpolation (method=4).This approach may enhance
+                             spatial accuracy when KNN = 1 or 2 but is not
+                             required for standard analysis.This approach also
+                             requires a DEM grid, SPI, and Tave files in the
+                             Input folder. (For the details, contact us for more
+                             information).
+
+
+**4. Data Visualization of Hydrographic Data**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  **CRMS2Map plot**:
