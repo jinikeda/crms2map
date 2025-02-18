@@ -26,7 +26,13 @@ Type: ***pip install -e .*** \
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; From step 1, resample hourly, daily, monthly, and yearly averaged datasets in the Input folder. The processed and output data are also available in each folder. See src/CRMS2Resample.py
 
-### Step 3. Plot time series data (optional)    
+### Step 3. Interplate the point-based data
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Conduct spatial interpolation with error analysis using point-based hydrographic data. The output data is saved on the variable name in the output folder. See src/CRMS2Interpolate.py
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; From step 1, resample hourly, daily, monthly, and yearly averaged datasets in the Input folder. The processed and output data are also available in each folder. See src/CRMS2Resample.py
+
+### Step 4. Plot time series data (optional)    
 
 ## Running submodule in the CRMS2Map package
 * ***CRMS2Map --help*** Show available commands:
