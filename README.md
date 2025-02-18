@@ -84,3 +84,4 @@ Jin Ikeda(2025). jinikeda/crms2map: data analytical and mapping tools for the Lo
 ### Release history
 CRMS2Map v1.0: First release on Aug/08/2024 (Only release CRMS2Plot. **Interpolation and mapping tools** will be released after paper publication) \
 CRMS2Map v1.1: Modified Geoid system and added supplemental analysis codes on Dec/06/2024
+CRMS2Map v1.2: Added spatial interpolation code on Feb/18/2025
