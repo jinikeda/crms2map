@@ -3,13 +3,23 @@
 # CRMS2Resample
 # Developed by the Center for Computation & Technology and Center for Coastal Ecosystem Design Studio at Louisiana State University (LSU).
 # Developer: Jin Ikeda, Shu Gao, and Christopher E. Kees
-# Last modified Aug 14, 2024
+# Last modified Aug 17, 2025
 
 from src.CRMS_general_functions import *
 
 
 @click.command()
-def resample_subcommand():
+@click.option(
+    "--sdate",
+    default=None,
+    help="Start date of the datasets (format: YYYY-MM-DD), default: None)",
+)
+@click.option(
+    "--edate",
+    default=None,
+    help="End date for the datasets (format: YYYY-MM-DD), default: None)",
+)
+def resample_subcommand(sdate, edate):
     """Handle data resampling."""
 
     ### Step 2 #############################################################################################################
@@ -41,7 +51,7 @@ def resample_subcommand():
     # Input Subset type
     ########################################################################################################################
     # Data1: Salinity [ppt] or the data no editing is required.
-    # Data2: Water_Elevation_to_Datum [ft] (CRMS_Geoid99_to_Geoid12a_offsets)
+    # Data2: Water_Elevation_to_Datum [ft] (CRMS_Geoid99_to_Geoid12b_offsets)
     # Data3: Water_Elevation_to_Marsh [ft]
     # Water_Elevation_to_Marsh data creates water depth and wet/dry boolean (dry:0 or wet:1)
     # Data4: Water Temperature (°C)
@@ -69,9 +79,27 @@ def resample_subcommand():
 
         CRMS_subset = create_dataframe(file)
 
-        start_year = CRMS_subset.index[0].year
-        end_year = CRMS_subset.index[-1].year
-        print(f"The {file_name} is from", start_year, "to", end_year)
+        # Get the start and end dates from the command line arguments
+        if sdate is None and edate is None:
+            # Get the CRMS files using the get_CRMS_file function
+            start_year = CRMS_subset.index[0].year
+            end_year = CRMS_subset.index[-1].year
+            print(f"The datasets are from", start_year, "to", end_year)
+            file_name = file_name + "_" + str(start_year) + "_" + str(end_year)
+
+        else:
+            # Convert sdate and edate to YYYYMMDD format
+            try:
+                start_date = datetime.strptime(sdate, "%Y-%m-%d").strftime("%Y%m%d")
+                end_date = datetime.strptime(edate, "%Y-%m-%d").strftime("%Y%m%d")
+            except ValueError:
+                print("Error: Dates must be in the format YYYY-MM-DD.")
+                return
+
+            print(f"The datasets are from {start_date} to {end_date}")
+            file_name = file_name + f"_{start_date}_{end_date}"
+
+        print(f"Generated File Name: {file_name}")
 
         ####################################################################################################################
         # User settings
@@ -91,12 +119,13 @@ def resample_subcommand():
             )
 
         # Select the datasets between the two dates
-        # CRMS_subset = CRMS_subset.query('index >= @start_date and index <= @end_date')
+        if sdate is not None and edate is not None:
+            CRMS_subset = CRMS_subset.query(
+                'index >= @sdate and index <= @edate')  # Select the datasets between the two dates
 
         ####################################################################################################################
         # 2.3 Resample and data-processing
         ####################################################################################################################
-        file_name = file_name + "_" + str(start_year) + "_" + str(end_year)
         if Data == 3:
             file_name_list = [file_name]
             file_name2 = file_name + "_wdepth"

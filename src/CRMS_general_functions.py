@@ -3,7 +3,7 @@
 # Provide CRMS2Interpolation functions
 # Developed by the Center for Computation & Technology and Center for Coastal Ecosystem Design Studio at Louisiana State University (LSU).
 # Developer: Jin Ikeda and Christopher E. Kees
-# Last modified Aug 14, 2024
+# Last modified Feb 17, 2025
 
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -14,6 +14,7 @@ import os
 import sys
 import zipfile
 import shutil
+import requests
 import click
 import argparse
 from datetime import datetime
@@ -107,22 +108,20 @@ def get_CRMS_file(Data):
 
 
 def get_y_variable(Input_file):
-    if "salinity" in Input_file or "Salinity" in Input_file:
-        y_variable = "Salinity"
-    elif "Geoid99_to_Geoid12a" in Input_file or "WL" in Input_file:
-        y_variable = "WL"
-    elif (
-            "Water_Elevation_to_Marsh" in Input_file and "wd." in Input_file
-    ):  # Need to add comma
+    if 'salinity' in Input_file or 'Salinity' in Input_file:
+        y_variable = 'Salinity'
+    elif 'Geoid99_to_Geoid' in Input_file or 'WL' in Input_file:
+        y_variable = 'WL'
+    elif 'Water_Elevation_to_Marsh' in Input_file and 'wd_' in Input_file or "W_HP" in Input_file:  # Need to add comma
         y_variable = "W_HP"
-    elif "Water_Elevation_to_Marsh" in Input_file and "wdepth" in Input_file:
+    elif 'Water_Elevation_to_Marsh' in Input_file and 'wdepth' in Input_file or "W_depth" in Input_file:
         y_variable = "W_depth"
-    elif "Water_Elevation_to_Marsh" in Input_file:
-        y_variable = "WL2M"
-    elif "Temp" in Input_file:
+    # elif 'Water_Elevation_to_Marsh' in Input_file:
+    #     y_variable = "WL2M"
+    elif 'Temp' in Input_file:
         y_variable = "Temp"
     else:
-        print("variable will be added \t", "TBD")  # Feature modification
+        print('variable will be added \t', "TBD")  # Feature modification
         y_variable = None
     return y_variable
 
@@ -133,7 +132,7 @@ def get_date_info(Input_file):
         "Ydata": "Y%Y",
         "Mdata": "M%Y_%m",
         "Ddata": "D%Y_%m%d",
-        "Hdata": "H%Y_%m%d_%H",
+        "Hdata": "H%y%m%d%H",
     }
     MA_formats = {
         "Mdata": 12,
@@ -981,3 +980,13 @@ def color_rgb_WL():
         normalize_rgb([255, 50, 255]),
         normalize_rgb([225, 0, 0]),
     ]
+
+
+def color_rgb_W_HP():
+    return [normalize_rgb([0, 0, 255]), normalize_rgb([0, 255, 128]), normalize_rgb([255, 127, 80])]  # TBD
+
+
+def color_rgb_W_depth():
+    return [normalize_rgb([211, 211, 211]), normalize_rgb([0, 0, 255]), normalize_rgb([127, 255, 255]),
+            normalize_rgb([0, 255, 128]), normalize_rgb([255, 50, 255]),
+            normalize_rgb([255, 127, 80])]
