@@ -3,10 +3,10 @@
 # machine learning for stepwise linear regression and random forest regression
 # Developed by the Center for Computation & Technology and Center for Coastal Design Studio at Louisiana State University (LSU).
 # Developer: Jin Ikeda
-# Last modified July 24, 2024
+# Last modified Feb 18, 2025
 
 ### Step 3 ###########################################################
-print ('Step 3: Fit model and Test')
+print('Step 3: Fit model and Test')
 ######################################################################
 
 ### 3.1 Import modules ###
@@ -21,8 +21,10 @@ import time
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error
+from sklearn.model_selection import GridSearchCV
+import lightgbm as lgb
 import statsmodels.api as sm
-
 
 ##################################################################################################################
 ### parameters ###################################################################################################
@@ -30,20 +32,20 @@ import statsmodels.api as sm
 Output_name = "bootstrap_Output"
 
 # Randomly pick up dataset
-n_repeat = int(50) #
-test_ratio= 0.25
+n_repeat = int(5000)  #
+test_ratio = 0.25
 
-#basin list
-#basin_list=['CS']
-#basin_list=['PO','BS','MR','ME','CS']
-basin_list=['PO','BS','MR','BA','TE','AT','TV','ME','CS']
+# basin list
+# basin_list = ['CS']
+# basin_list=['PO','BS','MR','ME','CS']
+basin_list = ['PO', 'BS', 'MR', 'BA', 'TE', 'AT', 'TV', 'ME', 'CS']
 
-Workspace=os.getcwd()
+Workspace = os.getcwd()
 # Print the current working directory
 print("Current working directory: {0}".format(os.getcwd()))
 
 ### HPC ####
-#Workspace = "/work/jinikeda/ETC/CRMS2Plot/" # if you want to specify the location
+# Workspace = "/work/jinikeda/ETC/CRMS2Plot/" # if you want to specify the location
 
 # Change the current working directory
 os.chdir(Workspace)
@@ -51,20 +53,22 @@ os.chdir(Workspace)
 # Make Input and output folders
 Inputspace = os.path.join(Workspace, 'Sub_basin')
 Photospace = os.path.join(Workspace, 'Photo')
-Outputspace = os.path.join(Workspace,Output_name)
+Outputspace = os.path.join(Workspace, Output_name)
 
 try:
-    #os.makedirs(Inputspace, exist_ok=True)
+    # os.makedirs(Inputspace, exist_ok=True)
     os.makedirs(Photospace, exist_ok=True)
     os.makedirs(Outputspace, exist_ok=True)
 
 except Exception as e:
     print(f"An error occurred while creating directories: {e}")
 
+
 ### Function #####################################################################################################
 
 # for regression analysis
-def generate_nested_dataframes(basin_list, base_path,drop_varibales_list): # drop_varibales_list = ['W_HP','W_depth'] because these data missing until 2008/03
+def generate_nested_dataframes(basin_list, base_path,
+                               drop_varibales_list):  # drop_varibales_list = ['W_HP','W_depth'] because these data missing until 2008/03
     dataframes = {}
     for basin in basin_list:
         file_path = os.path.join(base_path, f'basin_{basin}.csv')
@@ -76,7 +80,7 @@ def generate_nested_dataframes(basin_list, base_path,drop_varibales_list): # dro
     return dataframes
 
 
-def date2datetime(df,column='Date'):
+def date2datetime(df, column='Date'):
     if column == 'Date':
         df.index = pd.to_datetime(df[column])
         df.drop([column], axis=1, inplace=True)
@@ -87,7 +91,7 @@ def date2datetime(df,column='Date'):
 
 
 def normalized(df):
-    normalized_df= (df - df.min()) / (df.max() - df.min())+0.0001
+    normalized_df = (df - df.min()) / (df.max() - df.min()) + 0.0001
     print(normalized_df.describe())
     return normalized_df
 
@@ -102,28 +106,28 @@ def ccf_values(series1, series2):
     return c
 
 
-def ccf_lags(df,y_list): # y_list = ['Salinity', 'WL']
+def ccf_lags(df, y_list):  # y_list = ['Salinity', 'WL']
 
     df2 = pd.DataFrame()
 
     for y in y_list:
-        for x in df.columns[0:5]: # GoM_SST,AR_Q,Prcp,U10,V10
+        for x in df.columns[0:5]:  # GoM_SST,AR_Q,Prcp,U10,V10
             corr = ccf_values(df[y], df[x])
             lags = signal.correlation_lags(len(df[y]), len(df[x]))
             df2['lags'] = lags
             df2[f'r_{x}_{y}'] = corr
 
     mid = np.int64(df2.shape[0] / 2)  # center index
-    df3 = df2.iloc[mid - 6 : mid + 6+1]
+    df3 = df2.iloc[mid - 6: mid + 6 + 1]
     max_indices = df3.idxmax()
     min_indices = df3.idxmin()
 
     if len(basin) == 0:
         output = 'cross_correlation.xlsx'
     else:
-            output = 'cross_correlation_' + basin + '.xlsx'
+        output = 'cross_correlation_' + basin + '.xlsx'
 
-    df2.to_excel(os.path.join(Inputspace,output))
+    df2.to_excel(os.path.join(Inputspace, output))
     lag_info = []
     for i in min_indices[1:int(df2.shape[1] / 2) + 1]:  # for salinity
         lag_info.append(df2.lags[i])  # Go to first row
@@ -141,15 +145,15 @@ def modeldataset_shift(df, shift_info):
     df['Q'] = df['Q'].shift(shift_info[0])
     df['Prcp'] = df['Prcp'].shift(shift_info[1])
 
-    df.dropna(axis=0, how='any',inplace=True)
+    df.dropna(axis=0, how='any', inplace=True)
     X, X_significant, y, df = modeldataset(df)
 
     return X, X_significant, y, df
 
 
-def collinearity_VIF(df,vif_coef=10): # vif_coef: remove criterion of a variance inflation factor (VIF) value
+def collinearity_VIF(df, vif_coef=10):  # vif_coef: remove criterion of a variance inflation factor (VIF) value
 
-    df_vif=df.copy()
+    df_vif = df.copy()
     while True:
         vif_data = pd.DataFrame()
         vif_data["feature"] = df_vif.columns
@@ -165,14 +169,14 @@ def collinearity_VIF(df,vif_coef=10): # vif_coef: remove criterion of a variance
     return df_vif
 
 
-def modeldataset(df,alpha= 0.05):
+def modeldataset(df, alpha=0.05):
     # Normalize independent variables
     X_pre = df.iloc[:, 0:5]
     normalized_df = normalized(X_pre)
 
     # Apply Box-Cox transformation
     X = pd.DataFrame()
-    X.index =df.copy().index
+    X.index = df.copy().index
     lmda = pd.DataFrame()
 
     for column in normalized_df.columns:
@@ -211,7 +215,7 @@ def modeldataset(df,alpha= 0.05):
     return X, X_significant, y, df
 
 
-def stepwise_part (y, X_vif, alpha):
+def stepwise_part(y, X_vif, alpha):
     while True:
         lm_model = sm.OLS(y, X_vif)
 
@@ -223,7 +227,7 @@ def stepwise_part (y, X_vif, alpha):
 
         if drop_variable != 'const':  # don't drop const
             if p_values_max > alpha:
-                X_vif = X_vif.drop([drop_variable], axis=1) # update the file
+                X_vif = X_vif.drop([drop_variable], axis=1)  # update the file
             else:
                 break
         else:
@@ -236,31 +240,35 @@ def stepwise_part (y, X_vif, alpha):
                 break
 
     X_significant = X_vif.copy()
-    Variable_importance = (results.params.drop('const') ** 2) / (results.params.drop('const') ** 2).sum()
+
+    Variable_importance = (results.params.drop('const').abs()) / results.params.drop('const').abs().sum()
+    # Variable_importance = (results.params.drop('const') ** 2) / (results.params.drop('const') ** 2).sum()
 
     # print(results.summary())
     # print(Variable_importance)
 
-    return results, X_significant,Variable_importance
+    return results, X_significant, Variable_importance
 
 
 # this function is crude codes and needs to be improved by Jin 02/01/2024
-def stepwise_model_fit_test_bootstrap(X, X_vif,y,  y_variable, basin,n_repeat, test_ratio, alpha=0.05):
-
-    dropped_vif_variables = list(set(X.columns) - set(X_vif.columns)) # for OLS model drop high collinearity varibales #dropped_vif_variables = [] if no drops
+def stepwise_model_fit_test_bootstrap(X, X_vif, y, y_variable, basin, n_repeat, test_ratio, alpha=0.05):
+    dropped_vif_variables = list(set(X.columns) - set(
+        X_vif.columns))  # for OLS model drop high collinearity varibales #dropped_vif_variables = [] if no drops
 
     # For predictive variables
     features = X.copy()
     labels = y.copy()
     y_whole = labels[y_variable].copy()
 
-    ee = pd.DataFrame() #'model_fit_lm_plot_' + y_variable + '_' + basin + '.xlsx'
-    dd = pd.DataFrame() #'impotance_rf_' + y_variable + '_' + basin + '.xlsx'
-    ff = pd.DataFrame() #'model_fit_rf_plot_' + y_variable + '_' + basin + '.xlsx'
-    gg = pd.DataFrame() #'model_fit_r2ad_' + y_variable + '_' + basin + '.xlsx'
-    ii = pd.DataFrame() #'impotance_lm_' + y_variable + '_' + basin + '.xlsx'
-    jj = pd.DataFrame() #'model_fit_lm_test_plot_' + y_variable + '_' + basin + '.xlsx'
-    kk = pd.DataFrame() #'model_fit_rf_test_plot_' + y_variable + '_' + basin + '.xlsx'
+    ee = pd.DataFrame()  # 'model_fit_lm_plot_' + y_variable + '_' + basin + '.xlsx'
+    dd = pd.DataFrame()  # 'impotance_rf_' + y_variable + '_' + basin + '.xlsx'
+    ff = pd.DataFrame()  # 'model_fit_rf_plot_' + y_variable + '_' + basin + '.xlsx'
+    gg = pd.DataFrame()  # 'model_fit_r2ad_' + y_variable + '_' + basin + '.xlsx'
+    ii = pd.DataFrame()  # 'impotance_lm_' + y_variable + '_' + basin + '.xlsx'
+    jj = pd.DataFrame()  # 'model_fit_lm_test_plot_' + y_variable + '_' + basin + '.xlsx'
+    kk = pd.DataFrame()  # 'model_fit_rf_test_plot_' + y_variable + '_' + basin + '.xlsx'
+    impo_df_lgbm = pd.DataFrame()  # Feature importance for LightGBM
+
     error_table = pd.DataFrame()
     time_index = pd.DataFrame()
     time_index.index = y.index.copy()
@@ -281,7 +289,6 @@ def stepwise_model_fit_test_bootstrap(X, X_vif,y,  y_variable, basin,n_repeat, t
         train_features_vif_OLS = train_features.copy()
         train_features_vif_OLS.drop(dropped_vif_variables, axis=1, inplace=True)
 
-
         if y_variable == 'Salinity':
             y_boxcox = stats.boxcox(y_train)
 
@@ -291,9 +298,10 @@ def stepwise_model_fit_test_bootstrap(X, X_vif,y,  y_variable, basin,n_repeat, t
             gg.loc[i, 'R2ad'] = results.rsquared_adj
 
             dropped_significant_variables = list(
-                set(train_features_vif_OLS.columns) - set(X_significant.columns))  # for OLS model after drop #dropped_variables = [] if no drops
+                set(train_features_vif_OLS.columns) - set(
+                    X_significant.columns))  # for OLS model after drop #dropped_variables = [] if no drops
 
-            #print (dropped_significant_variables)
+            # print (dropped_significant_variables)
             vif_features.drop(dropped_significant_variables, axis=1, inplace=True)
 
             test_features_significant = test_features.copy()
@@ -303,7 +311,7 @@ def stepwise_model_fit_test_bootstrap(X, X_vif,y,  y_variable, basin,n_repeat, t
             lm_predict = results.predict(test_features_significant)
             lm_predict_whole = results.predict(vif_features)
             lm_predict = special.inv_boxcox(lm_predict, y_boxcox[1])  # inverse box-cox transform
-            lm_predict_whole = special.inv_boxcox(lm_predict_whole, y_boxcox[1]) # inverse box-cox transform
+            lm_predict_whole = special.inv_boxcox(lm_predict_whole, y_boxcox[1])  # inverse box-cox transform
 
         else:
             # stepwise linear regression part (drop variable only until p < alpha (keep intercept)
@@ -312,9 +320,10 @@ def stepwise_model_fit_test_bootstrap(X, X_vif,y,  y_variable, basin,n_repeat, t
             gg.loc[i, 'R2ad'] = results.rsquared_adj
 
             dropped_significant_variables = list(
-                set(train_features_vif_OLS.columns) - set(X_significant.columns))  # for OLS model after drop #dropped_variables = [] if no drops
+                set(train_features_vif_OLS.columns) - set(
+                    X_significant.columns))  # for OLS model after drop #dropped_variables = [] if no drops
 
-            #print (dropped_significant_variables)
+            # print (dropped_significant_variables)
             vif_features.drop(dropped_significant_variables, axis=1, inplace=True)
 
             test_features_significant = test_features.copy()
@@ -324,19 +333,19 @@ def stepwise_model_fit_test_bootstrap(X, X_vif,y,  y_variable, basin,n_repeat, t
             lm_predict = results.predict(test_features_significant)
             lm_predict_whole = results.predict(vif_features)
 
-        lm_predict.index=y_test.index # for error analysis *lm_predict.index is integer, but y_test.index is datetime
-        lm_predict_whole.index=y_whole.index # for error analysis
+        lm_predict.index = y_test.index  # for error analysis *lm_predict.index is integer, but y_test.index is datetime
+        lm_predict_whole.index = y_whole.index  # for error analysis
 
         # Calculate the absolute errors
         lm_errors = y_test - lm_predict
-        #print ('y_test:',y_whole, y_whole.shape)
+        # print ('y_test:',y_whole, y_whole.shape)
         lm_errors_whole = y_whole - lm_predict_whole
         print('Mean Absolute Error:', round(np.mean(abs(lm_errors)), 2), 'ppt')
 
-
         # Random forest regression
         # Instantiate model with 100 decision trees
-        rf = RandomForestRegressor(n_estimators=100, random_state=1)
+        n_estimate = 100
+        rf = RandomForestRegressor(n_estimators=n_estimate, random_state=1)
         # Train the model on training data
         rf.fit(train_features, y_train)
 
@@ -345,9 +354,8 @@ def stepwise_model_fit_test_bootstrap(X, X_vif,y,  y_variable, basin,n_repeat, t
         rf_predict_whole = rf.predict(features)
         # Calculate the absolute errors
         rf_errors = y_test - rf_predict
-        #rf_errors_whole = y_whole - rf_predict_whole
+        # rf_errors_whole = y_whole - rf_predict_whole
         print('Mean Absolute Error:', round(np.mean(abs(rf_errors)), 2), 'ppt')
-
 
         # Get numerical feature importances
         importances = list(rf.feature_importances_)
@@ -355,6 +363,55 @@ def stepwise_model_fit_test_bootstrap(X, X_vif,y,  y_variable, basin,n_repeat, t
         feature_list = features.columns
         feature_importances = [(feature, round(importance, 2)) for feature, importance in
                                zip(feature_list, importances)]
+
+        # ---------------------- LIGHTGBM REGRESSION ----------------------  under development (Feb 17, 2025)
+        lgbm = lgb.LGBMRegressor(
+            objective="regression",  # Regression objective
+            random_state=i,
+            boosting_type='gbdt',
+            max_depth=10,
+            n_estimators=200,
+            learning_rate=0.1,
+        )
+
+        # Ensure numeric data
+        train_features_lgbm = train_features.astype(float)
+        test_features_lgbm = test_features.astype(float)
+
+        # Replace spaces in column names
+        train_features_lgbm.columns = train_features_lgbm.columns.str.replace(" ", "_")
+        test_features_lgbm.columns = test_features_lgbm.columns.str.replace(" ", "_")
+
+        # Train the model
+        lgbm.fit(train_features_lgbm, y_train)
+
+        # Make predictions
+        lgbm_predictions = lgbm.predict(test_features_lgbm)  # Predictions on test set
+        lgbm_predictions_whole = lgbm.predict(features)  # Predictions on full dataset
+
+        # Calculate the absolute errors
+        lgbm_errors = y_test - lgbm_predictions
+        # lgbm_errors_whole = y_whole - lgbm_predictions_whole
+        print('Mean Absolute Error:', round(np.mean(abs(lgbm_errors)), 2), 'ppt')
+
+        # Store feature importance for LGBM
+        importance = lgbm.booster_.feature_importance(
+            importance_type='gain')  # Get feature importance (using 'gain' method)
+        feature_names = lgbm.feature_name_
+
+        # Create dataframe of feature importance
+        importance_df = pd.DataFrame({'Feature': feature_names, 'Importance': importance})
+
+        # Normalize importance to 0-1 scale
+        importance_df['Relative_Importance'] = (importance_df['Importance'] / importance_df['Importance'].sum()).round(
+            2)
+
+        # Store feature importance in DataFrame
+        lgbm_importances = importance_df['Relative_Importance'].values
+        impo_df_lgbm.index = feature_names
+        impo_df_lgbm[f'trial_{i}'] = lgbm_importances
+
+        # ---------------------- LIGHTGBM REGRESSION ----------------------
 
         if i == 0:
 
@@ -366,7 +423,14 @@ def stepwise_model_fit_test_bootstrap(X, X_vif,y,  y_variable, basin,n_repeat, t
             aa['RF_Pred'] = rf_predict
             aa['RF_Error'] = rf_errors
 
+            # Error table
+            lgbm_tableA = pd.DataFrame()  # error_table
+            lgbm_tableA['Obs'] = y_test
+            lgbm_tableA['Pred'] = lgbm_predictions
+            lgbm_tableA['Error'] = lgbm_errors
+
             error_table = aa.copy()
+            lgbm_error_table = lgbm_tableA.copy()
 
             # Importance table
             dd.index = feature_list
@@ -375,7 +439,7 @@ def stepwise_model_fit_test_bootstrap(X, X_vif,y,  y_variable, basin,n_repeat, t
             dd[column_name] = numeric
 
             ii.index = X.copy().columns.drop(['const'])
-            ii[column_name] = Variable_importance # for OLS model after drop
+            ii[column_name] = Variable_importance  # for OLS model after drop
 
             # Sort the feature importances by most important first
             feature_importances = sorted(feature_importances, key=lambda x: x[1], reverse=True)
@@ -409,12 +473,20 @@ def stepwise_model_fit_test_bootstrap(X, X_vif,y,  y_variable, basin,n_repeat, t
 
             error_table = pd.concat([error_table, bb.copy()])
 
+            # Error table
+            lgbm_tableB = pd.DataFrame()  # error_table
+            lgbm_tableB['Obs'] = y_test
+            lgbm_tableB['Pred'] = lgbm_predictions
+            lgbm_tableB['Error'] = lgbm_errors
+
+            lgbm_error_table = pd.concat([lgbm_error_table, lgbm_tableB.copy()])
+
             # Importance table
             numeric = [pair[1] for pair in feature_importances]
             column_name = 'trial_' + str(i)
             dd[column_name] = numeric
 
-            ii[column_name] = Variable_importance # for ols after drop
+            ii[column_name] = Variable_importance  # for ols after drop
 
             # Sort the feature importances by most important first
             feature_importances = sorted(feature_importances, key=lambda x: x[1], reverse=True)
@@ -436,16 +508,25 @@ def stepwise_model_fit_test_bootstrap(X, X_vif,y,  y_variable, basin,n_repeat, t
     output_dir = os.path.join(Outputspace, output)
     error_table.to_excel(output_dir, index=False, header=True)
 
+    output = 'model_fit_lgbm_' + y_variable + '_' + basin + '.xlsx'
+    output_dir = os.path.join(Outputspace, output)
+    lgbm_error_table.to_excel(output_dir, index=False, header=True)
+
     dd = add_stats(dd, 0)
     output2 = 'impotance_rf_' + y_variable + '_' + basin + '.xlsx'
     output_dir = os.path.join(Outputspace, output2)
     dd.to_excel(output_dir, index=True, header=True)
 
-    ii.fillna(0) # include no contributions
+    ii.fillna(0)  # include no contributions
     ii = add_stats(ii, 0)
     output2 = 'impotance_lm_' + y_variable + '_' + basin + '.xlsx'
     output_dir = os.path.join(Outputspace, output2)
     ii.to_excel(output_dir, index=True, header=True)
+
+    impo_df_lgbm = add_stats(impo_df_lgbm, 0)
+    output2 = 'impotance_lgbm_' + y_variable + '_' + basin + '.xlsx'
+    output_dir = os.path.join(Outputspace, output2)
+    impo_df_lgbm.to_excel(output_dir, index=True, header=True)
 
     ee.reset_index(drop=True)
     ee.index = time_index.index
@@ -480,7 +561,48 @@ def stepwise_model_fit_test_bootstrap(X, X_vif,y,  y_variable, basin,n_repeat, t
     output_dir = os.path.join(Outputspace, output)
     kk.to_excel(output_dir, index=True, header=True)
 
+    # ---------------------- LIGHTGBM REGRESSION ----------------------
+    # Check for hyperparameters
+    # -----------------------------------------------------------------
+    # learning rate 0.05 or 0.1
+    # max_depth 5
+    # n_estimators 100
+
+    # param_grid = {
+    #     'learning_rate': [0.01, 0.05, 0.1],
+    #     'max_depth': [5, 10, 15],
+    #     'n_estimators': [50, 100, 200],
+    #     'boosting_type': ['gbdt'],
+    #     'objective': ['regression'],
+    #     'random_state': [i]
+    # }
+    #
+    # # Instantiate LightGBM Regressor
+    # lgbm = lgb.LGBMRegressor()
+    #
+    # # Use GridSearchCV to find the best parameters based on MAE
+    # grid_search = GridSearchCV(
+    #     estimator=lgbm,
+    #     param_grid=param_grid,
+    #     scoring='neg_mean_absolute_error',  # Use MAE as evaluation metric
+    #     cv=3,  # 3-fold cross-validation
+    #     verbose=2,
+    #     n_jobs=-1
+    # )
+    #
+    # # Fit on training data
+    # grid_search.fit(train_features, y_train)
+    #
+    # # Get best parameters
+    # best_params = grid_search.best_params_
+    # best_score = -grid_search.best_score_  # Convert negative MAE to positive
+    # print(f"Best Parameters: {best_params}")
+    # print(f"Best Mean Absolute Error (MAE): {best_score:.2f}")
+
+    # ------------------------------------------------------------------------------------------------------------------
+
     return lm_predict, rf_predict, error_table
+
 
 def error_analysis(df):
     df = df.reset_index()
@@ -496,7 +618,7 @@ def error_analysis(df):
     RMSE = (data_frame ** 2).mean(axis=0, skipna=True) ** 0.5  # Root square mean error
     RMSSE = ((data_frame.div(STD)) ** 2).mean(axis=0,
                                               skipna=True) ** 0.5  # Root square mean error #Root Mean Square Standardized Error
-    MAPE = 100 - np.mean(100 * abs(MAE/ df.iloc[:, 1]))
+    MAPE = 100 - np.mean(100 * abs(MAE / df.iloc[:, 1]))
 
     se = (data_frame ** 2)
     mo = np.sqrt(np.nanmean((refdata) ** 2))  # root mean square of reference data
@@ -552,7 +674,9 @@ def error_analysis(df):
 
     return df
 
-def add_stats(df, first_col): # Caution excel output includes 'xxx. " ' " cannot be treated as numeric and differs from this output.
+
+def add_stats(df,
+              first_col):  # Caution excel output includes 'xxx. " ' " cannot be treated as numeric and differs from this output.
     # first col=0 for statistical analyssis
     quantiles = df.iloc[:, first_col:].quantile([0.25, 0.5, 0.75], axis=1, numeric_only=True, interpolation='linear')
     df['Mean'] = df.iloc[:, first_col:].mean(axis=1, skipna=True)
@@ -563,47 +687,49 @@ def add_stats(df, first_col): # Caution excel output includes 'xxx. " ' " cannot
 
     return df
 
+
 ### Step 2 ###########################################################
-print ('Step 2: Read input data ')
+print('Step 2: Read input data ')
 ######################################################################
 
 ### 2.1 Read CRMS files ###
 
-file_suffix=".csv"
-file_suffix2=".xlsx"
+file_suffix = ".csv"
+file_suffix2 = ".xlsx"
 
-#basin_list=['PO','BS','MR','BA','TE','AT','TV','ME','CS']
+# basin_list=['PO','BS','MR','BA','TE','AT','TV','ME','CS']
 
-Basin_df = generate_nested_dataframes(basin_list, Inputspace,['W_HP','W_depth']) # drop_variable_list=['W_HP','W_depth']
-#print (Basin_df['PO'].columns)
+Basin_df = generate_nested_dataframes(basin_list, Inputspace,
+                                      ['W_HP', 'W_depth'])  # drop_variable_list=['W_HP','W_depth']
+# print (Basin_df['PO'].columns)
 
 ### Step 3 ###########################################################
-print ('Step 3: Get output data ')
+print('Step 3: Get output data ')
 ######################################################################
 
 # #Get lags information
 lag_info = {}
-y_list = ['Salinity', 'WL'] #['Salinity', 'WL']
+y_list = ['Salinity', 'WL']  # ['Salinity', 'WL']
 for basin in basin_list:
     print(
         '##########################################################################################################################\n')
     print('Basin is ', basin)
     print(
         '##########################################################################################################################\n')
-    corr,lag_info[basin]=ccf_lags(Basin_df[basin],y_list) # y_list = ['Salinity', 'WL']
+    corr, lag_info[basin] = ccf_lags(Basin_df[basin], y_list)  # y_list = ['Salinity', 'WL']
 
-    Basin=Basin_df[basin]
-    lag_info[basin][lag_info[basin] < 0] = 0 # physically Q and precipitation proceeds to salinity but no behinds.
-    shift_info=[lag_info[basin][0][1],lag_info[basin][0][2]]
+    Basin = Basin_df[basin]
+    lag_info[basin][lag_info[basin] < 0] = 0  # physically Q and precipitation proceeds to salinity but no behinds.
+    shift_info = [lag_info[basin][0][1], lag_info[basin][0][2]]
 
-    print ('y_list', y_list[0],'df_shape',Basin.shape, 'shift_info [Q,P]',shift_info)
-    X, X_vif, y, df_shift = modeldataset_shift(Basin.copy(),shift_info)  # for salinity # causion modeldataset_shift overwrite Basin. So, use Basin.copy()
-    stepwise_model_fit_test_bootstrap(X, X_vif, y,y_list[0],basin, n_repeat, test_ratio)
+    print('y_list', y_list[0], 'df_shape', Basin.shape, 'shift_info [Q,P]', shift_info)
+    X, X_vif, y, df_shift = modeldataset_shift(Basin.copy(),
+                                               shift_info)  # for salinity # causion modeldataset_shift overwrite Basin. So, use Basin.copy()
+    stepwise_model_fit_test_bootstrap(X, X_vif, y, y_list[0], basin, n_repeat, test_ratio)
 
     print('y_list', y_list[1], 'df_shape', Basin.shape)
     X, X_vif, y, dummy_df_shift = modeldataset(Basin.copy())  # for water level
-    stepwise_model_fit_test_bootstrap(X, X_vif, y,y_list[1],basin, n_repeat, test_ratio)
+    stepwise_model_fit_test_bootstrap(X, X_vif, y, y_list[1], basin, n_repeat, test_ratio)
 
 print("Time to Compute: \t\t\t", time.process_time(), " seconds")
 print("Job Finished ʕ •ᴥ•ʔ")
-
