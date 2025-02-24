@@ -241,8 +241,11 @@ def stepwise_part(y, X_vif, alpha):
 
     X_significant = X_vif.copy()
 
-    Variable_importance = (results.params.drop('const').abs()) / results.params.drop('const').abs().sum()
-    # Variable_importance = (results.params.drop('const') ** 2) / (results.params.drop('const') ** 2).sum()
+    # Calculate variable importance based on MAE-based feature importance (criterion=“absolute_error”)
+    # Variable_importance = (results.params.drop('const').abs()) / results.params.drop('const').abs().sum()
+
+    # MSE-based impurity Metrics in Random Forest (variance reduction, default: criterion='squared_error')
+    Variable_importance = (results.params.drop('const') ** 2) / (results.params.drop('const') ** 2).sum()
 
     # print(results.summary())
     # print(Variable_importance)
