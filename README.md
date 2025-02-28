@@ -30,8 +30,6 @@ Type: ***pip install -e .*** \
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Conduct spatial interpolation with error analysis using point-based hydrographic data. The output data is saved using the variable name in the output folder. Interpolated images are saved in the subfolder: "Map." See src/CRMS2Interpolate.py
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; From step 1, resample hourly, daily, monthly, and yearly averaged datasets in the Input folder. The processed and output data are also available in each folder. See src/CRMS2Resample.py
-
 ### Map examples
 
 <img src="https://github.com/jinikeda/CRMS2Map/blob/main/Image/Map_Salinity_H23100100.png" alt="Salinity Map at 0 AM 2023-10-01" width="600">
