@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # coding: utf-8
-# CRMS2Interpolation with error analysis
+# CRMS2Interpolate with error analysis and mapping
 # Developed by the Center for Computation & Technology and Center for Coastal Ecosystem Design Studio at Louisiana State University (LSU).
 # Developer: Jin Ikeda, Shu Gao, Linoj V. N. Rugminiamma, and Christopher E. Kees
-# Last modified Feb 17, 2025
+# Last modified Feb 28, 2025
 
-
+# Import the required modules
 from src.CRMS_general_functions import *
 from datetime import timedelta
 
@@ -90,10 +90,16 @@ def get_CRMS_file_variable(variable):
             "  4: Random Forest Spatial Interpolation with KDTree"),
 )
 @click.option(
-    "--KNN",
+    "--knn",
     default=6,
     type=click.IntRange(1, 12),
     help="Number of nearest neighbors (recommend 4-6 for the best performance with IDW)",
+)
+@click.option(
+    "--mapflag",
+    default=True,
+    help="Create an interpolated map. Default: True.",
+    show_default=True,
 )
 @click.option(
     "--inputfile",
@@ -110,13 +116,14 @@ def get_CRMS_file_variable(variable):
     default=False,
     help=(
             "For research purposes only (Not Recommend): Include geographic information during Random forest interpolation (method=4)."
-            "This approach may enhance spatial accuracy when KNN = 1 or 2 but is not required for standard analysis."
+            "This approach may enhance spatial accuracy when knn = 1 or 2 but is not required for standard analysis."
             "This approach also requires a DEM grid, SPI, and Tave files in the Input folder. (For the details, contact us for more information)."
 
     ),
     required=False,
 )
-def interpolate_subcommand(data_range, sdate, edate, data_type, tstep, data_var, method, knn, inputfile, geoinfo):
+def interpolate_subcommand(data_range, sdate, edate, data_type, tstep, data_var, method, knn, mapflag, inputfile,
+                           geoinfo):
     """Handle interpolation of point-based (station-based) data."""
 
     ### Step 3 #############################################################################################################
@@ -239,10 +246,20 @@ def interpolate_subcommand(data_range, sdate, edate, data_type, tstep, data_var,
     from scipy.spatial import cKDTree as KDTree
     from sklearn.ensemble import RandomForestRegressor
 
+    import matplotlib as mpl
+    from mpl_toolkits.basemap import Basemap
+    import rioxarray
+    import imageio
+    from PIL import Image
+    from matplotlib.lines import Line2D
+    from matplotlib.patches import Patch
+    import matplotlib.dates as mp_dates
+    import matplotlib.colors as colors
+
     ####################################################################################################################
 
     # Get y_variable
-    y_variable = get_y_variable(Input_subset)
+    y_variable = get_y_variable(Input_file)
 
     assert 1 <= Method <= 4, "Please select the method values between 1-4 ...{{ (>_<) }}\n"
 
@@ -263,8 +280,11 @@ def interpolate_subcommand(data_range, sdate, edate, data_type, tstep, data_var,
           f"{method_str} with {'fixed radius=' + str(radius) if Method == 2 else 'k-nearest neighbors=' + str(knn)}")
 
     Output_dir = os.path.join(Outputspace, Output_name)  # Make Output folder
+    Mapspace = os.path.join(Output_dir, 'Map')
     try:
         os.makedirs(Output_dir, exist_ok=True)
+        os.makedirs(Mapspace, exist_ok=True)
+
     except Exception as e:
         print(f"An error occurred while creating directories: {e}")
 
@@ -577,6 +597,99 @@ def interpolate_subcommand(data_range, sdate, edate, data_type, tstep, data_var,
 
         return outName
 
+    def CRMS_maps(datelist, CRMS_shp_list, tiff_list, Photospace, y_variable, params, cb_lim,
+                  cb_ticks_step, contour_flag=True, Interest_contour_level=None):
+        assert not (
+                contour_flag and Interest_contour_level is None), "Interest_contour_level must not be None when contour_flag is True"
+        figsize, fs_title, fs_main, fs_sub, lw_main, lw_sub, maker_size, epsg, MA_window, date_removal = get_params(
+            params)
+
+        cmap = plt.cm.get_cmap("jet")
+        print(y_variable)
+        if contour_flag == False:
+            pass
+
+        for date, shp, tiff in zip(datelist, CRMS_shp_list, tiff_list):
+
+            print("Create a map for ", tiff)
+            # Load TIFF and mask no-data values
+            Base_tiff = rioxarray.open_rasterio(tiff, mask_and_scale=True)
+
+            # Plot the map
+            fig = plt.figure(figsize=figsize)
+            ax = fig.add_axes([0.05, 0.0, 0.9, 0.9])
+            ax.tick_params(axis='both', labelsize=fs_sub)
+
+            map = Basemap(llcrnrlon=-94., llcrnrlat=28., urcrnrlon=-88.0, urcrnrlat=31.75, epsg=epsg, resolution='i')
+            map.arcgisimage(server="http://server.arcgisonline.com/ArcGIS", service='World_Shaded_Relief', xpixels=1500,
+                            verbose=False)
+            map.drawmeridians([-92, -90], linewidth=lw_sub, color='k')
+            map.drawparallels([29, 30], linewidth=lw_sub, color='k')
+
+            # Plot interpolated data with mask
+            cntr = Base_tiff.plot(cmap=cmap, alpha=0.7, add_colorbar=False, ax=ax, xticks=[-94.0, -92.0, -90.0],
+                                  yticks=[29.0, 30.0], ylim=(28.75, 30.65), xlim=(-94.0, -88.6), vmin=cb_lim[0],
+                                  vmax=cb_lim[1])
+
+            ax.set_title(f"{y_variable} in {date.replace('_', '/')}", fontsize=fs_title)
+
+            # Labels
+            ax.set_xlabel('Long [°W]', fontsize=fs_main)
+            ax.set_ylabel('Lat [°N]', fontsize=fs_main)
+
+            # Plot the basin boundary
+            polygon.plot(ax=ax, color='none', edgecolor='k', linestyle='-', linewidth=0.5)
+
+            # Plot the CRMS points
+            CRMS_stations = gpd.read_file(shp)
+            crms_lat = CRMS_stations['Lat'].tolist()
+            crms_lon = CRMS_stations['Long'].tolist()
+            map.plot(crms_lon, crms_lat, 'ok', alpha=0.5, markersize=maker_size, label='CRMS')
+
+            # Colorbar
+            cbar_ax = fig.add_axes([0.05, 0.05, 0.9, 0.03])
+            cbar = plt.colorbar(cntr, cax=cbar_ax, orientation='horizontal', pad=0.18, extend='max')
+            ticklabels = np.arange(cb_lim[0], cb_lim[1] + 0.01, cb_ticks_step)
+            cbar.set_ticks(ticklabels)
+            cbar.ax.tick_params(labelsize=fs_main)
+
+            ax.legend(loc='lower left', bbox_to_anchor=(0.025, 0.05), ncol=1, fontsize=fs_sub)
+
+            if y_variable == 'Salinity':
+                cbar.set_label(r'$\it{S}$ [ppt]', rotation=0, size=fs_main)
+            elif y_variable == 'WL':
+                cbar.set_label(r'$\xi$ [m, NAVD88]', rotation=0, size=fs_main)
+            elif y_variable == "W_HP":
+                cbar.set_label(r'$\it{HP}$ ', rotation=0, size=fs_main)
+            elif y_variable == "W_depth":
+                cbar.set_label(r'$\it{h}$ [m]', rotation=0, size=fs_main)
+            else:
+                print('The variable is not defined')
+
+            # Save output
+            outName = os.path.join(Photospace, f"Map_{y_variable}_{date}.png")
+            print(outName)
+
+            fig.savefig(outName, dpi=300, bbox_inches='tight')
+
+            plt.cla()  # Clear current axis
+            plt.clf()  # Clear current figure
+            plt.close()
+
+    def get_params(params):
+        figsize = params['figsize']
+        fs_title = params['fs_title']
+        fs_main = params['fs_main']
+        fs_sub = params['fs_sub']
+        lw_main = params['lw_main']
+        lw_sub = params['lw_sub']
+        maker_size = params['maker_size']
+        epsg = params['epsg']
+        MA_window = params['MA_window']
+        date_removal = params['date_removal']
+
+        return figsize, fs_title, fs_main, fs_sub, lw_main, lw_sub, maker_size, epsg, MA_window, date_removal
+
     ########################################################################################################################
     ######  Code part 3: Interpolation #####################################################################################
     ########################################################################################################################
@@ -599,6 +712,10 @@ def interpolate_subcommand(data_range, sdate, edate, data_type, tstep, data_var,
     ##### Output files ###########################################
     outName = os.path.splitext(os.path.basename(CRMSSite))[0] + "_LongLat.csv"
     CRMSSite_LongLat = os.path.join(Output_dir, outName)  # CRMS Station with Lon and Lat
+
+    # Initialize Tiff list
+    tiff_list = []
+    CRMS_shp_list = []
 
     ##### make a grid file using a boundary shape file
     # read maskfile
@@ -832,7 +949,7 @@ def interpolate_subcommand(data_range, sdate, edate, data_type, tstep, data_var,
                 CRMS_prj_gdf2.to_csv(os.path.join(Output_dir, "CRMS_Temp_index.csv"),
                                      index=True)  # Save merged CSV file
 
-        # CRMS_prj_gdf.to_file(CRMS_stations, driver='ESRI Shapefile') # Overwrite the shapefile for comfirmation.
+        # CRMS_prj_gdf.to_file(CRMS_stations, driver='ESRI Shapefile') # Overwrite the shapefile for confirmation.
 
     ########################################################################################################################
     #### For loop for each datetime ####
@@ -880,6 +997,7 @@ def interpolate_subcommand(data_range, sdate, edate, data_type, tstep, data_var,
         drop_list = xy_list
         create_df2gdf(station, [GCS_name_list[0], GCS_name_list[1]], drop_list, GCS,
                       output_file=CRMS_point_shp)  # Create point shape file for train data
+        CRMS_shp_list.append(CRMS_point_shp)
 
         # Spatial interpolation using selected method
         if Method == 1:
@@ -1029,8 +1147,7 @@ def interpolate_subcommand(data_range, sdate, edate, data_type, tstep, data_var,
         else:
             pass  # Feature modification
 
-        # Extract raster values at points
-        extract_point_values(InterpolatedRaster_tif, CRMS_point_shp)
+        extract_point_values(InterpolatedRaster_tif, CRMS_point_shp)  # Extract raster values at points
 
         gdf = gpd.read_file(CRMS_point_shp)
         gdf = calculate_gdf_error(gdf, date)
@@ -1059,6 +1176,7 @@ def interpolate_subcommand(data_range, sdate, edate, data_type, tstep, data_var,
             # Clip the raster to the polygon boundary
             raster, transform = mask(src, mask_shp.geometry, crop=True, all_touched=True, nodata=np.nan)
             Raster_clip = write_raster(src, raster, transform, nodata_value, method_dict, Method, i, date, Output_dir)
+            tiff_list.append(Raster_clip)  # Append an element to the list
 
         # Create Contour line (optional)
         Contour_name = os.path.join(Output_dir, f"{y_variable}_MA_Contour_{date}_n{knn}_{method_str}.shp")
@@ -1079,6 +1197,7 @@ def interpolate_subcommand(data_range, sdate, edate, data_type, tstep, data_var,
 
         # Add statistics to the importance table
         importance_table = add_stats(importance_table, importance_table.columns.get_loc('trial_0'))
+        # print(method_str, y_variable)
         outName = "Impotance" + f"_{method_str}_" + y_variable + ".csv"
         output_dir = os.path.join(Output_dir, outName)
         importance_table.to_csv(output_dir, index=True, header=True)
@@ -1151,6 +1270,49 @@ def interpolate_subcommand(data_range, sdate, edate, data_type, tstep, data_var,
     df3 = calculate_statistics(CRMSSite_datasets_summary)
     df3.to_csv(CRMSSite_datasets_summary, index=False, header=True)
 
+    ########################################################################################################################
+    print('Step 4: Create png files')
+    ########################################################################################################################
+    if mapflag == True:
+
+        # coordinates system
+        epsg = GCS.split(':')[1]
+        epsg_prj = PRJ.split(':')[1]  # 6344
+
+        figsize = (9, 6)
+        params = {
+            'figsize': figsize,  # figure size
+            'fs_title': 14,  # font size in title
+            'fs_main': 12,  # font size in main parts
+            'fs_sub': 10,  # font size in sub parts
+            'lw_main': 1.0,  # line width in main parts
+            'lw_sub': 0.2,  # line width in sub parts
+            'maker_size': 3,  # maker_size
+            'epsg': epsg,  # coordinate system
+            'MA_window': MA_window,  # moving average window
+            'date_removal': date_removal,  # date removal eg. Mdata -> 'M'
+        }
+
+        if y_variable == 'Salinity':
+            cbar_lim = [0, 30]  # colorbar min and max
+            cbar_ticks_step = 5  # colorbar ticks step
+        elif y_variable == 'WL':
+            cbar_lim = [-0.2, 0.6]  # colorbar min and max
+            cbar_ticks_step = 0.2  # colorbar ticks step
+        elif y_variable == "W_HP":
+            cbar_lim = [0, 1.0]  # colorbar min and max
+            cbar_ticks_step = 0.2  # colorbar ticks step
+        elif y_variable == "W_depth":
+            cbar_lim = [0, 0.6]  # colorbar min and max
+            cbar_ticks_step = 0.2  # colorbar ticks step
+        else:
+            print('The variable is not defined')
+
+        # Map the interpolated y_variable
+        CRMS_maps(datelist, CRMS_shp_list, tiff_list, Mapspace, data_var, params, cbar_lim,
+                  cbar_ticks_step, contour_flag=False,
+                  Interest_contour_level=None)
+
     # Calculate the elapsed time
     end_time = time.time()
 
@@ -1158,7 +1320,7 @@ def interpolate_subcommand(data_range, sdate, edate, data_type, tstep, data_var,
     elapsed_time = end_time - start_time
 
     # Print the elapsed time
-    print("Done Step 3")
+    print("Done Interpolation and mapping")
     print("Time to Compute: \t\t\t", elapsed_time, " seconds")
     print("Job Finished ʕ •ᴥ•ʔ")
 

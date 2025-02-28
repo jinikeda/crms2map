@@ -112,9 +112,10 @@ def get_y_variable(Input_file):
         y_variable = 'Salinity'
     elif 'Geoid99_to_Geoid' in Input_file or 'WL' in Input_file:
         y_variable = 'WL'
-    elif 'Water_Elevation_to_Marsh' in Input_file and 'wd_' in Input_file or "W_HP" in Input_file:  # Need to add comma
+    elif ('Elevation_to_Marsh' in Input_file and 'wd_' in Input_file) or ("W_HP" in Input_file):
         y_variable = "W_HP"
-    elif 'Water_Elevation_to_Marsh' in Input_file and 'wdepth' in Input_file or "W_depth" in Input_file:
+    elif ('Elevation_to_Marsh' in Input_file and 'wdepth' in Input_file) or ("W_depth" in Input_file):
+        y_variable = "W_depth"
         y_variable = "W_depth"
     # elif 'Water_Elevation_to_Marsh' in Input_file:
     #     y_variable = "WL2M"
@@ -530,7 +531,7 @@ def write_raster(
         }
     )
     method_str = method_dict.get(method, "TBD")
-    Raster_clip = f"{Outputspace}/{method_str}_train_{i}_{date}.tif"
+    Raster_clip = f"{Outputspace}/{method_str}_{date}.tif"
     with rasterio.open(Raster_clip, "w", **out_meta) as dest:
         dest.write(raster)
     return Raster_clip
