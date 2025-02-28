@@ -34,7 +34,7 @@ Type: ***pip install -e .*** \
 
 <img src="https://github.com/jinikeda/CRMS2Map/blob/main/Image/Map_Salinity_H23100100.png" alt="Salinity Map at 0 AM 2023-10-01" width="600">
 
-<p style="text-align: left;"><strong>Figure.1</strong> Salinity Map at 0 AM, 2023-10-01across coastal Louisiana using hourly observed data. The available station are plotted as dotted marks.Command: CRMS2Map interpolate --sdate 2019-02-01 --edate 2019-02-02 --data_var W_depth --data_type H --tstep 6</p>
+<p style="text-align: left;"><strong>Figure.1</strong> Salinity Map at 0 AM, 2023-10-01 across coastal Louisiana using hourly observed data. The available stations are plotted as dotted marks.Command: CRMS2Map interpolate --sdate 2023-10-01 --edate 2023-10-02 --data_var Salinity --data_type H --tstep 6</p>
 
 ### Step 4. Plot time series data (optional)    
 
