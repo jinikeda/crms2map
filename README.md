@@ -26,11 +26,17 @@ Type: ***pip install -e .*** \
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; From step 1, resample hourly, daily, monthly, and yearly averaged datasets in the Input folder. The processed and output data are also available in each folder. See src/CRMS2Resample.py
 
-### Step 3. Interplate the point-based data
+### Step 3. Interplate the point-based data and Mapping
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Conduct spatial interpolation with error analysis using point-based hydrographic data. The output data is saved on the variable name in the output folder. See src/CRMS2Interpolate.py
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Conduct spatial interpolation with error analysis using point-based hydrographic data. The output data is saved using the variable name in the output folder. Interpolated images are saved in the subfolder: "Map." See src/CRMS2Interpolate.py
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; From step 1, resample hourly, daily, monthly, and yearly averaged datasets in the Input folder. The processed and output data are also available in each folder. See src/CRMS2Resample.py
+
+### Map examples
+
+<img src="https://github.com/jinikeda/CRMS2Map/blob/main/Image/Map_Salinity_H23100100.png" alt="Salinity Map at 0 AM 2023-10-01" width="600">
+
+<p style="text-align: left;"><strong>Figure.1</strong> Salinity Map at 0 AM, 2023-10-01across coastal Louisiana using hourly observed data. The available station are plotted as dotted marks.Command: CRMS2Map interpolate --sdate 2019-02-01 --edate 2019-02-02 --data_var W_depth --data_type H --tstep 6</p>
 
 ### Step 4. Plot time series data (optional)    
 
@@ -41,11 +47,15 @@ Type: ***pip install -e .*** \
 * ***CRMS2Map discrete*** for step.1b: Create a subset data for salinity, water temperature, water level, and water level to marsh (hydroperiod and inundation depth) using CRMS_Discrete_Hydrographic2subsets.py
 * ***CRMS2Map resample*** for step.2: Create hourly, daily, monthly, and yearly averaged datasets using CRMS2Resample.py
 * ***CRMS2Map interpolate*** for step.3: Create raster images using spatial interpolation techniques (e.g., IDW and Kriging) with CRMS2Interpolate.py
+
+    usage: [--data_range] [--sdate] [--edate] [--data_type] [--staionfile] [--tstep ] [--data_var] [--method ] [--knn] [--mapflag] [--inputfile]** \
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <mark>**[Caution] no uppercases are available in click**</mark> 
+  
 * ***CRMS2Map plot***: Data analysis and plotting tool after step.2\
   This tool creates a single (bundled) dataset on the user's interested period, including moving averaged datasets and making plots. 
 
     usage: [--sdate] [--edate] [--staionfile] [--data_typ] [--save] [--plotdata] [--specify_ma]** \
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <mark>**[Caution] no uppercases are availeble in click**</mark> 
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <mark>**[Caution] no uppercases are available in click**</mark> 
 
     **Options:** 
 
@@ -68,13 +78,13 @@ Type: ***pip install -e .*** \
 
 <img src="https://github.com/jinikeda/CRMS2Map/blob/main/Image/Water_level_median.png" alt="Long-term water level" width="400">
 
-<p style="text-align: left;"><strong>Figure.1</strong> Median water levels across coastal Louisiana for long-term water level change study using a 12-month moving average window. The inter-quantile range between Q1 and Q3 is shaded grey. Command: CRMS2Map plot</p>
+<p style="text-align: left;"><strong>Figure.2</strong> Median water levels across coastal Louisiana for long-term water level change study using a 12-month moving average window. The inter-quantile range between Q1 and Q3 is shaded grey. Command: CRMS2Map plot</p>
 
 <p align="left">
   <img src="https://github.com/jinikeda/CRMS2Map/blob/main/Image/Water_depth_multi_stations.png" alt="Ida_inundation depth"  width="400">
   <img src="https://github.com/jinikeda/CRMS2Map/blob/main/Image/Salinity_multi_stations.png" alt="Ida salinity"  width="400">
 </p>
-<p style="text-align: left;"><strong>Figure.2</strong> Inundation depth (left) and salinity (right) at multiple CRMS stations during Hurricane Ida in 2021. Command: CRMS2Map plot --sdate 2021-08-28 --edate 2021-09-03 --plotdata org --save False --data_type H --stationfile station_list.txt</p>
+<p style="text-align: left;"><strong>Figure.3</strong> Inundation depth (left) and salinity (right) at multiple CRMS stations during Hurricane Ida in 2021. Command: CRMS2Map plot --sdate 2021-08-28 --edate 2021-09-03 --plotdata org --save False --data_type H --stationfile station_list.txt</p>
 
 ### Supplement 
 This folder provides data processing codes and additional datasets for wetland hydrological analysis (for the details, read readme.txt in the Supplement folder). \
