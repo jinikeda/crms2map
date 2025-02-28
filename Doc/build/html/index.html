@@ -52,7 +52,7 @@
 <li><a class="reference internal" href="#usage"><strong>Usage</strong></a><ul>
 <li><a class="reference internal" href="#auto-retrieve-hydrographic-data"><strong>1. Auto-Retrieve Hydrographic Data</strong></a></li>
 <li><a class="reference internal" href="#data-processing-of-hydrographic-data"><strong>2. Data Processing of Hydrographic Data</strong></a></li>
-<li><a class="reference internal" href="#spatial-interpolation-of-hydrographic-data"><strong>3. Spatial Interpolation of Hydrographic Data</strong></a></li>
+<li><a class="reference internal" href="#spatial-interpolation-of-hydrographic-data-and-mapping"><strong>3. Spatial Interpolation of Hydrographic Data and Mapping</strong></a></li>
 <li><a class="reference internal" href="#data-visualization-of-hydrographic-data"><strong>4. Data Visualization of Hydrographic Data</strong></a></li>
 </ul>
 </li>
@@ -206,14 +206,14 @@ folders for easy access.</p></li>
 </dl>
 </div></blockquote>
 </section>
-<section id="spatial-interpolation-of-hydrographic-data">
-<h3><strong>3. Spatial Interpolation of Hydrographic Data</strong><a class="headerlink" href="#spatial-interpolation-of-hydrographic-data" title="Link to this heading"></a></h3>
+<section id="spatial-interpolation-of-hydrographic-data-and-mapping">
+<h3><strong>3. Spatial Interpolation of Hydrographic Data and Mapping</strong><a class="headerlink" href="#spatial-interpolation-of-hydrographic-data-and-mapping" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><strong>CRMS2Map interpolate</strong>:</p>
 <ul>
 <li><p>Generates spatial interpolation datasets (GeoTiFF) from
-point-based hydrographic data.</p></li>
-<li><p>Output data are saved in the “Output” folder.</p></li>
+point-based hydrographic data and map the GeoTiFF.</p></li>
+<li><p>Output data are saved in the “Output” folder and subdirectory “Map”.</p></li>
 <li><p>Estimated Time: depends on the datasets.</p></li>
 </ul>
 </li>
@@ -241,8 +241,10 @@ Pykrige 2: IDW with fixed distance (WhiteboxTools,
 optional: need to install WhiteboxTools)) 3: IDW
 with KDTree (k-nearest neighbors) 4: Random Forest
 Spatial Interpolation with KDTree  [1&lt;=x&lt;=4]</div>
-<div class="line">–KNN INTEGER RANGE     Number of nearest neighbors (recommend 4-6 for the
+<div class="line">–knn INTEGER RANGE     Number of nearest neighbors (recommend 4-6 for the
 best performance with IDW)  [1&lt;=x&lt;=12]</div>
+<div class="line">–mapflag BOOLEAN       Create an interpolated map. Default: True.
+[default: True]</div>
 <div class="line">–inputfile PATH        Alternative input file path (manual input). This
 option is not typically required but can be used for
 manual file selection.</div>
@@ -257,6 +259,9 @@ information).</div>
 </div>
 </dd>
 </dl>
+<figure class="align-default">
+<a class="reference internal image-reference" href="_images/Map_Salinity_H23100100.png"><img alt="CRMS Lat/Long data" src="_images/Map_Salinity_H23100100.png" style="width: 900px; height: 450px;" /></a>
+</figure>
 </section>
 <section id="data-visualization-of-hydrographic-data">
 <h3><strong>4. Data Visualization of Hydrographic Data</strong><a class="headerlink" href="#data-visualization-of-hydrographic-data" title="Link to this heading"></a></h3>

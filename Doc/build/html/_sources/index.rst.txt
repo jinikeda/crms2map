@@ -115,15 +115,15 @@ CRMS data list
   --edate TEXT  End date for the data analysis (format: YYYY-MM-DD)
 
 
-**3. Spatial Interpolation of Hydrographic Data**
+**3. Spatial Interpolation of Hydrographic Data and Mapping**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  **CRMS2Map interpolate**:
 
    -  Generates spatial interpolation datasets (GeoTiFF) from
-      point-based hydrographic data.
+      point-based hydrographic data and map the GeoTiFF.
 
-   -  Output data are saved in the “Output” folder.
+   -  Output data are saved in the “Output” folder and subdirectory "Map".
 
    -  Estimated Time: depends on the datasets.
 Options:
@@ -148,8 +148,10 @@ Options:
                              optional: need to install WhiteboxTools)) 3: IDW
                              with KDTree (k-nearest neighbors) 4: Random Forest
                              Spatial Interpolation with KDTree  [1<=x<=4]  
-   | --KNN INTEGER RANGE     Number of nearest neighbors (recommend 4-6 for the
-                             best performance with IDW)  [1<=x<=12]
+   | --knn INTEGER RANGE     Number of nearest neighbors (recommend 4-6 for the
+                             best performance with IDW)  [1<=x<=12]   
+   | --mapflag BOOLEAN       Create an interpolated map. Default: True.
+                             [default: True]
    | --inputfile PATH        Alternative input file path (manual input). This
                              option is not typically required but can be used for
                              manual file selection.
@@ -161,6 +163,11 @@ Options:
                              requires a DEM grid, SPI, and Tave files in the
                              Input folder. (For the details, contact us for more
                              information).
+
+.. figure:: media/Map_Salinity_H23100100.png
+   :alt: CRMS Lat/Long data
+   :width: 900px
+   :height: 450px
 
 
 **4. Data Visualization of Hydrographic Data**
