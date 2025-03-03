@@ -85,7 +85,7 @@ Type: ***pip install -e .*** \
 <p style="text-align: left;"><strong>Figure.3</strong> Inundation depth (left) and salinity (right) at multiple CRMS stations during Hurricane Ida in 2021. Command: CRMS2Map plot --sdate 2021-08-28 --edate 2021-09-03 --plotdata org --save False --data_type H --stationfile station_list.txt</p>
 
 ### Supplement 
-This folder provides data processing codes and additional datasets for wetland hydrological analysis (for the details, read readme.txt in the Supplement folder). \
+This folder provides data processing codes and additional datasets for wetland hydrological analysis (for the details, read readme.txt in the Supplement folder). 
 
 
 ### Documentation
@@ -98,5 +98,5 @@ Jin Ikeda(2025). jinikeda/crms2map: data analytical and mapping tools for the Lo
 
 ### Release history
 CRMS2Map v1.0: First release on Aug/08/2024 (Only release CRMS2Plot. **Interpolation and mapping tools** will be released after paper publication) \
-CRMS2Map v1.1: Modified Geoid system and added supplemental analysis codes on Dec/06/2024
+CRMS2Map v1.1: Modified Geoid system and added supplemental analysis codes on Dec/06/2024 \
 CRMS2Map v1.2: Added spatial interpolation code on Feb/18/2025
