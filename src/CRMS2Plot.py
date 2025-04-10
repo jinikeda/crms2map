@@ -413,7 +413,7 @@ def plot_data(sdate, edate, stationfile, data_type, save, plotdata, specify_ma):
 def create_nested_datasets(
         file_name, file_name_o, file_suffix, MA_window, threshold1, Discrete=False
 ):
-    global start_date, end_date  # Refer to the global variables
+
     datasets = {}  # monthly average dataset
     MA_datasets = {}  # moving average dictionaly
     for file_n, name_o in zip(file_name, file_name_o):
