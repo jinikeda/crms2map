@@ -196,18 +196,22 @@ def plot_data(sdate, edate, stationfile, data_type, save, plotdata, specify_ma):
     elif Data_type == "Y":
         data_suffix = "Ydata"
 
-    file_name1 = os.path.join(Inputspace, f"CRMS_Water_Temp_2006_2024_{data_suffix}")
+    # Calculate the end year (today - 4 months) for default_range (CRMS data are behind around 4 month)
+    end_year = (datetime.today() - timedelta(days=120)).year
+    default_range = f"2006_{end_year}"  # CRMS data are available after 2006 to around 4 months before today
+
+    file_name1 = os.path.join(Inputspace, f"CRMS_Water_Temp_{default_range}_{data_suffix}")
     file_name2 = os.path.join(
-        Inputspace, f"CRMS_Surface_salinity_2006_2024_{data_suffix}"
+        Inputspace, f"CRMS_Surface_salinity_{default_range}_{data_suffix}"
     )
     file_name3 = os.path.join(
-        Inputspace, f"CRMS_Geoid99_to_Geoid12b_offsets_2006_2024_{data_suffix}"
+        Inputspace, f"CRMS_Geoid99_to_Geoid12b_offsets_{default_range}_{data_suffix}"
     )
     file_name4 = os.path.join(
-        Inputspace, f"CRMS_Water_Elevation_to_Marsh_2006_2024_wdepth_{data_suffix}"
+        Inputspace, f"CRMS_Water_Elevation_to_Marsh_{default_range}_wdepth_{data_suffix}"
     )
     file_name5 = os.path.join(
-        Inputspace, f"CRMS_Water_Elevation_to_Marsh_2006_2024_wd_{data_suffix}"
+        Inputspace, f"CRMS_Water_Elevation_to_Marsh_{default_range}_wd_{data_suffix}"
     )
 
     file_name = [file_name1, file_name2, file_name3, file_name4, file_name5]
@@ -413,7 +417,6 @@ def plot_data(sdate, edate, stationfile, data_type, save, plotdata, specify_ma):
 def create_nested_datasets(
         file_name, file_name_o, file_suffix, MA_window, threshold1, Discrete=False
 ):
-
     datasets = {}  # monthly average dataset
     MA_datasets = {}  # moving average dictionaly
     for file_n, name_o in zip(file_name, file_name_o):
