@@ -73,122 +73,123 @@ def continuous_subcommand():
     file = file_name + file_suffix
     offsets_file = offsets_name + file_suffix
 
+    import gc
+
+    # Read only the CSV header first to map post-drop column indices to original column names
+    _enc = "iso-8859-1"
     try:
-        CRMS = pd.read_csv(os.path.join(Inputspace, file), encoding="iso-8859-1")
-        offsets = pd.read_csv(
-            os.path.join(Inputspace, offsets_file), encoding="iso-8859-1"
-        )
+        _hdr = pd.read_csv(os.path.join(Inputspace, file), nrows=0, encoding=_enc)
     except UnicodeDecodeError:
-        # If the above fails due to an encoding error, try another encoding
-        # print('encoding error')
-        CRMS = pd.read_csv(os.path.join(Inputspace, file), encoding="utf-8")
-        offsets = pd.read_csv(os.path.join(Inputspace, offsets_file), encoding="utf-8")
+        _enc = "utf-8"
+        _hdr = pd.read_csv(os.path.join(Inputspace, file), nrows=0, encoding=_enc)
+    _all_cols = _hdr.columns.tolist()
+    del _hdr
 
-    print(CRMS.head(5))
+    _date_col = "Date (mm/dd/yyyy)"
+    _time_col = "Time (hh:mm:ss)"
+    _tz_col = "Time Zone"
+    _drop_cols = {_date_col, _time_col, _tz_col}
+    # Post-drop column indices [0, 3, 7, 11, 13, 16, 41, 42] map to original column names
+    _remaining = [c for c in _all_cols if c not in _drop_cols]
+    _needed_indices = [0, 3, 7, 11, 13, 16, 41, 42]
+    _data_cols = [_remaining[i] for i in _needed_indices]
+    _usecols = [_date_col, _time_col, _tz_col] + _data_cols
 
-    # Check data size
-    print(CRMS.shape)
+    offsets = pd.read_csv(os.path.join(Inputspace, offsets_file), encoding=_enc)
 
-    # Check data type
-    CRMS = pd.DataFrame(CRMS)
-    print(CRMS.dtypes)
+    # Read the large CSV in chunks using only needed columns and filtering early to save memory
+    print("Reading large dataset in chunks (this may take a while)...")
+    _chunksize = 500_000
+    _chunks = []
+    for _chunk in pd.read_csv(
+        os.path.join(Inputspace, file),
+        encoding=_enc,
+        usecols=_usecols,
+        chunksize=_chunksize,
+    ):
+        # Filter for surface (-H) stations and exclude surrogate (-H0X) early
+        _chunk = _chunk[
+            _chunk["Station ID"].str.contains("-H")
+            & ~_chunk["Station ID"].str.contains("-H0X")
+        ]
+        if len(_chunk) == 0:
+            continue
+        _dt = _chunk[_date_col] + " " + _chunk[_time_col]
+        _chunk.index = pd.to_datetime(_dt, format="%m/%d/%Y %H:%M:%S")
+        _chunk.index = _chunk.index.floor("min")
+        _chunk.index.name = "Date"
+        _chunk.drop([_date_col, _time_col, _tz_col], axis=1, inplace=True)
+        # Downcast float64 to float32 to halve numeric memory usage
+        for _col in _chunk.select_dtypes("float64").columns:
+            _chunk[_col] = _chunk[_col].astype("float32")
+        _chunks.append(_chunk)
 
-    # Combine the "Date (mm/dd/yyyy)" and "Time (hh:mm)". "Time Zone" is CST only (ignore)
-    datetime_str = CRMS["Date (mm/dd/yyyy)"] + " " + CRMS["Time (hh:mm:ss)"]
+    CRMS_continuous = pd.concat(_chunks)
+    del _chunks
+    gc.collect()
 
-    # Convert the datetime string to a datetime object and set it as the index of the dataframe
-    CRMS.index = pd.to_datetime(datetime_str, format="%m/%d/%Y %H:%M:%S")
-    CRMS.index.name = "Date"
-
-    # Drop the columns that were used to create the index
-    CRMS.drop(
-        ["Date (mm/dd/yyyy)", "Time (hh:mm:ss)", "Time Zone"], axis=1, inplace=True
-    )
+    print(CRMS_continuous.head(5))
+    print(CRMS_continuous.shape)
+    print(CRMS_continuous.dtypes)
 
     ### Step 1 ###########################################################
     print("Step 1: Make subsets")
     ######################################################################
 
-    # Extract rows with CPRA Station IDs including "-H" which is surface measurements -W: Well
-    CRMS_continuous = CRMS.loc[CRMS["Station ID"].str.contains("-H")]
-
-    # Check data size
-    # print(CRMS_continuous.shape)
-
-    # save_name=file_name+'_continuous_origin.csv'
-    # CRMS_continuous.to_csv(save_name)
-    # CRMS_continuous.head(20)
-
-    CRMS_continuous = CRMS_continuous.iloc[
-                      :, [0, 3, 7, 11, 13, 16, 41, 42]
-                      ]  # Station ID,Adjusted Temperature,Adjusted Salinity (ppt),Adjusted Water Elevation to Marsh (ft),Adjusted Water Elevation to Datum (ft)
-
-    # Round down to nearest minute (#some data shows several seconds difference in the time index)
-    CRMS_continuous.index = CRMS_continuous.index.floor("min")
-
-    # Select the datasets between the two dates
-    # start_date = '2020-01-01'
-    # end_date = '2022-01-01'
-    # selected_CRMS = CRMS.query('index >= @start_date and index <= @end_date')
-
-    # Filter out rows where "Station ID" includes "-H0X" Hydrologic stations using surrogate data can be identified by the naming convention CRMSxxxx-H0X
-    CRMS_continuous = CRMS_continuous[
-        ~CRMS_continuous["Station ID"].str.contains("-H0X")
-    ]
-
-    # Remove -H01 etc from CPRA Station ID
+    # Remove -H01 etc from Station ID
     CRMS_continuous["Station ID"] = CRMS_continuous["Station ID"].str.replace(
         "-H\d+", "", regex=True
     )
     # CRMS_continuous.head(10)
-
-    # Create pivot table
-    pivoted_salinity = CRMS_continuous.pivot_table(
-        index=CRMS_continuous.index,
-        columns="Station ID",
-        values="Adjusted Salinity (ppt)",
-    )
-    pivoted_W2m = CRMS_continuous.pivot_table(
-        index=CRMS_continuous.index,
-        columns="Station ID",
-        values="Adjusted Water Elevation to Marsh (ft)",
-    )
-    pivoted_W2d = CRMS_continuous.pivot_table(
-        index=CRMS_continuous.index,
-        columns="Station ID",
-        values="Adjusted Water Elevation to Datum (ft)",
-    )
-    pivoted_temp = CRMS_continuous.pivot_table(
-        index=CRMS_continuous.index,
-        columns="Station ID",
-        values="Adjusted Water Temperature (°C)",
-    )
 
     output_name1 = "CRMS_Surface_salinity"
     output_name2 = "CRMS_Water_Elevation_to_Marsh"
     output_name3 = "CRMS_Water_Elevation_to_Datum"
     output_name4 = "CRMS_Water_Temp"
 
-    save_name = output_name1 + file_suffix
-    pivoted_salinity.to_csv(os.path.join(Inputspace, save_name))
-
-    save_name = output_name2 + file_suffix
-    pivoted_W2m.to_csv(os.path.join(Inputspace, save_name))
-
-    save_name = output_name3 + file_suffix
-    pivoted_W2d.to_csv(os.path.join(Inputspace, save_name))
-
-    save_name = output_name4 + file_suffix
-    pivoted_temp.to_csv(os.path.join(Inputspace, save_name))
-
+    # Create, save, and free each pivot table individually to reduce peak memory
+    pivoted_salinity = CRMS_continuous.pivot_table(
+        index=CRMS_continuous.index,
+        columns="Station ID",
+        values="Adjusted Salinity (ppt)",
+    )
+    pivoted_salinity.to_csv(os.path.join(Inputspace, output_name1 + file_suffix))
     pivoted_salinity.describe().to_csv(
         os.path.join(Processspace, "Surface_salinity_summary.csv")
     )
+    del pivoted_salinity
+    gc.collect()
+
+    pivoted_W2m = CRMS_continuous.pivot_table(
+        index=CRMS_continuous.index,
+        columns="Station ID",
+        values="Adjusted Water Elevation to Marsh (ft)",
+    )
+    pivoted_W2m.to_csv(os.path.join(Inputspace, output_name2 + file_suffix))
     pivoted_W2m.describe().to_csv(os.path.join(Processspace, "pivoted_W2m_summary.csv"))
+    del pivoted_W2m
+    gc.collect()
+
+    pivoted_W2d = CRMS_continuous.pivot_table(
+        index=CRMS_continuous.index,
+        columns="Station ID",
+        values="Adjusted Water Elevation to Datum (ft)",
+    )
+    pivoted_W2d.to_csv(os.path.join(Inputspace, output_name3 + file_suffix))
     pivoted_W2d.describe().to_csv(os.path.join(Processspace, "pivoted_W2d_summary.csv"))
+    # Keep pivoted_W2d for the GEOID adjustment below
+
+    pivoted_temp = CRMS_continuous.pivot_table(
+        index=CRMS_continuous.index,
+        columns="Station ID",
+        values="Adjusted Water Temperature (°C)",
+    )
+    pivoted_temp.to_csv(os.path.join(Inputspace, output_name4 + file_suffix))
     pivoted_temp.describe().to_csv(
         os.path.join(Processspace, "pivoted_temp_summary.csv")
     )
+    del pivoted_temp, CRMS_continuous
+    gc.collect()
 
     ####### Additional modification #######
     print("Modify Geoid99 to Geoid12a/b for CRMS_Water_Elevation_to_Datum.csv")
@@ -250,6 +251,8 @@ def continuous_subcommand():
     # Save a dataset (CSV)
     save_name = os.path.join(Inputspace, "CRMS_Geoid99_to_Geoid12b_offsets.csv")
     offset_CRMSw2d.to_csv(save_name)
+    del offsets_hydrographic, merged_df, pivoted_W2d, offset_CRMSw2d, offsets
+    gc.collect()
 
     # Calculate the elapsed time
     end_time = time.time()
