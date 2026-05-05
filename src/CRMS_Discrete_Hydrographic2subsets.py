@@ -71,28 +71,39 @@ def discrete_subcommand():
     file = file_name + file_suffix
     offsets_file = offsets_name + file_suffix
 
+    import gc
+
+    # Read only the CSV header first to map post-drop column indices to original column names
+    _enc = "iso-8859-1"
     try:
-        CRMS = pd.read_csv(os.path.join(Inputspace, file), encoding="iso-8859-1")
-        offsets = pd.read_csv(
-            os.path.join(Inputspace, offsets_file), encoding="iso-8859-1"
-        )
+        _hdr = pd.read_csv(os.path.join(Inputspace, file), nrows=0, encoding=_enc)
     except UnicodeDecodeError:
-        # If the above fails due to an encoding error, try another encoding
-        # print('encoding error')
-        CRMS = pd.read_csv(os.path.join(Inputspace, file), encoding="utf-8")
-        offsets = pd.read_csv(os.path.join(Inputspace, offsets_file), encoding="utf-8")
+        _enc = "utf-8"
+        _hdr = pd.read_csv(os.path.join(Inputspace, file), nrows=0, encoding=_enc)
+    _all_cols = _hdr.columns.tolist()
+    del _hdr
+
+    _date_col = "Date (mm/dd/yyyy)"
+    _time_col = "Time (hh:mm)"
+    _tz_col = "Time Zone"
+    _drop_cols = {_date_col, _time_col, _tz_col}
+    # Post-drop column indices [0, 5, 14, 36, 37] map to original column names
+    _remaining = [c for c in _all_cols if c not in _drop_cols]
+    _needed_indices = [0, 5, 14, 36, 37]
+    _data_cols = [_remaining[i] for i in _needed_indices]
+    _usecols = [_date_col, _time_col, _tz_col] + _data_cols
+
+    offsets = pd.read_csv(os.path.join(Inputspace, offsets_file), encoding=_enc)
+
+    # Read only required columns to reduce memory
+    CRMS = pd.read_csv(os.path.join(Inputspace, file), encoding=_enc, usecols=_usecols)
 
     print(CRMS.head(5))
-
-    # Check data size
     print(CRMS.shape)
-
-    # Check data type
-    CRMS = pd.DataFrame(CRMS)
     print(CRMS.dtypes)
 
-    # Combine the "Date (mm/dd/yyyy)" and "Time (hh:mm)". "Time Zone" is CST only (ignore)
-    datetime_str = CRMS["Date (mm/dd/yyyy)"] + " " + CRMS["Time (hh:mm)"]
+    # Combine "Date (mm/dd/yyyy)" and "Time (hh:mm)". "Time Zone" is CST only (ignore)
+    datetime_str = CRMS[_date_col] + " " + CRMS[_time_col]
 
     # Convert the datetime string to a datetime object and set it as the index of the dataframe
     CRMS.index = pd.to_datetime(datetime_str, format="%m/%d/%Y %H:%M")
@@ -106,19 +117,18 @@ def discrete_subcommand():
     ######################################################################
 
     # Extract rows with CPRA Station IDs including "-P" which is porewater measurements
-    CRMS_pore = CRMS.loc[CRMS["CPRA Station ID"].str.contains("-P")]
+    CRMS_pore = CRMS.loc[CRMS["CPRA Station ID"].str.contains("-P")].copy()
+    del CRMS
+    gc.collect()
 
     # Check data size
-    CRMS_pore.shape
+    print(CRMS_pore.shape)
 
     save_name = file_name + "_pore_origin.csv"
     CRMS_pore.to_csv(os.path.join(Inputspace, save_name))
 
-    CRMS_pore.head(20)
-
-    CRMS_pore = CRMS_pore.iloc[
-                :, [0, 5, 14, 36, 37]
-                ]  # Select CPRA Station ID, Measurement Depth (ft), Soil Porewater Salinity (ppt),Latitude, and Longitude
+    print(CRMS_pore.head(20))
+    # Columns already selected via usecols; no further column subsetting needed
 
     # define the start and end dates
     # start_date = '2020-01-01'
@@ -138,6 +148,8 @@ def discrete_subcommand():
     CRMS_pore_group = CRMS_pore.groupby("Measurement Depth (ft)")
     depth_10_pore = CRMS_pore_group.get_group(0.328)  # 10 cm
     depth_30_pore = CRMS_pore_group.get_group(0.984)  # 30 cm
+    del CRMS_pore, CRMS_pore_group
+    gc.collect()
 
     # Create pivot table
     pivoted_10 = depth_10_pore.pivot_table(
@@ -153,6 +165,8 @@ def discrete_subcommand():
     pivoted_10[pivoted_10 > 100] = np.nan
     pivoted_30[pivoted_30 > 100] = np.nan
     print("an unreliable value over 100 ppt is replaced by np.nan")
+    del depth_10_pore, depth_30_pore
+    gc.collect()
 
     output_name1 = "Pore_salinity_10"
     output_name2 = "Pore_salinity_30"
@@ -207,6 +221,9 @@ def discrete_subcommand():
     save_name = output_name2 + "_Ydata.csv"
     yearly_pore_30_mean.to_csv(os.path.join(Inputspace, save_name))
     # yearly_pore_30_mean.to_csv(save_name, na_rep=int(-99999))
+    del pivoted_10, pivoted_30, monthly_pore_10_mean, monthly_pore_30_mean
+    del yearly_pore_10_mean, yearly_pore_30_mean
+    gc.collect()
 
     ### Step 3 ###########################################################
     print("Step 3: Interpolation")
